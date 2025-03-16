@@ -1,0 +1,93 @@
+// This is your Prisma schema file
+// Learn more about it here: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts     Account[]
+  transactions Transaction[]
+  categories   Category[]
+}
+
+model Account {
+  id            Int      @id @default(autoincrement())
+  name          String
+  type          String   // ASSET, LIABILITY
+  category      String   // CASH, BANK, E_WALLET, CREDIT_CARD, LOAN, OTHER
+  balance       Float    @default(0)
+  currency      String   @default("USD")
+  interestRate  Float?   // For loans and interest-bearing accounts
+  dueDate       DateTime? // For loans and credit cards with payment dates
+  paymentAmount Float?   // For loans with fixed payments
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  // Transactions
+  fromTransactions Transaction[] @relation("FromAccount")
+  toTransactions   Transaction[] @relation("ToAccount")
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  description String
+  amount      Float
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Double entry accounts
+  fromAccount   Account @relation("FromAccount", fields: [fromAccountId], references: [id])
+  fromAccountId Int
+  toAccount     Account @relation("ToAccount", fields: [toAccountId], references: [id])
+  toAccountId   Int
+  
+  // Categories
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+  
+  // User who owns this transaction
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  
+  // For debt payments
+  principalAmount Float?
+  interestAmount  Float?
+  feeAmount       Float?
+  isExtraPayment  Boolean @default(false)
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String   // INCOME, EXPENSE
+  color     String?  // For UI representation
+  icon      String?  // For UI representation
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // User who owns this category
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  
+  // Transactions using this category
+  transactions Transaction[]
+}
