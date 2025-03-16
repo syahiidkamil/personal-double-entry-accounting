@@ -8,9 +8,18 @@ import DashboardLayout from "./shared/components/DashboardLayout";
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 import DashboardHomePage from "./features/dashboard-home/DashboardHomePage";
-import ProductsPage from "./features/products/ProductsPage";
-import ProductDetailsPage from "./features/products/ProductDetailsPage";
 import NotFoundPage from "./features/not-found/NotFoundPage";
+
+// Dummy Components for missing pages
+const AccountsPage = () => <div>Accounts Page</div>;
+const TransactionsPage = () => <div>Transactions Page</div>;
+const TransactionNewPage = () => <div>New Transaction Page</div>;
+const TransactionTransferPage = () => <div>Transfer Funds Page</div>;
+const DebtsPage = () => <div>Debt & Liabilities Page</div>;
+const BalanceSheetPage = () => <div>Balance Sheet Report</div>;
+const IncomeStatementPage = () => <div>Income Statement Report</div>;
+const SpendingAnalysisPage = () => <div>Spending Analysis Report</div>;
+const NetWorthPage = () => <div>Net Worth Report</div>;
 
 // Route configuration array
 const routesConfig = [
@@ -31,12 +40,40 @@ const routesConfig = [
         element: <DashboardHomePage />,
       },
       {
-        path: "products",
-        element: <ProductsPage />,
+        path: "accounts",
+        element: <AccountsPage />,
       },
       {
-        path: "products/:id",
-        element: <ProductDetailsPage />,
+        path: "transactions",
+        element: <TransactionsPage />,
+      },
+      {
+        path: "transactions/new",
+        element: <TransactionNewPage />,
+      },
+      {
+        path: "transactions/transfer",
+        element: <TransactionTransferPage />,
+      },
+      {
+        path: "debts",
+        element: <DebtsPage />,
+      },
+      {
+        path: "reports/balance-sheet",
+        element: <BalanceSheetPage />,
+      },
+      {
+        path: "reports/income-statement",
+        element: <IncomeStatementPage />,
+      },
+      {
+        path: "reports/spending",
+        element: <SpendingAnalysisPage />,
+      },
+      {
+        path: "reports/net-worth",
+        element: <NetWorthPage />,
       },
     ],
   },
