@@ -1,6 +1,7 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { AuthProvider } from "./shared/contexts/AuthProvider";
+import { SonnerProvider } from "./shared/components/ui/sonner-provider";
 import ProtectedRoute from "./shared/routes/ProtectedRoute";
 import PublicRoute from "./shared/routes/PublicRoute";
 import DashboardLayout from "./shared/components/DashboardLayout";
@@ -67,6 +68,7 @@ const router = createBrowserRouter(routesConfig);
 const App = () => {
   return (
     <AuthProvider>
+      <SonnerProvider />
       <RouterProvider router={router} />
     </AuthProvider>
   );

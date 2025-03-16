@@ -1,37 +1,54 @@
 import React, { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
+import authService from "../../services/authService";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Check if user is logged in from authService
+    const checkAuth = async () => {
+      const isAuthenticated = authService.isAuthenticated();
+      if (isAuthenticated) {
+        setUser(authService.getCurrentUser());
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
-  const login = (userData) => {
-    // Simulate login API call
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    return true;
+  const login = async (credentials) => {
+    const result = await authService.login(
+      credentials.email,
+      credentials.password
+    );
+    if (result.success) {
+      setUser(result.user);
+      return true;
+    }
+    return false;
   };
 
-  const register = (userData) => {
-    // Simulate register API call
-    const newUser = { ...userData, id: Date.now() };
-    setUser(newUser);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    return true;
+  const register = async (userData) => {
+    console.log("AuthProvider register called with:", userData);
+    const result = await authService.register(
+      userData.name,
+      userData.email,
+      userData.password
+    );
+    console.log("Register result:", result);
+    if (result.success) {
+      setUser(result.user);
+      return true;
+    }
+    return false;
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
-    localStorage.removeItem("user");
   };
 
   const value = {
