@@ -19,6 +19,10 @@ import {
   DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AppLogo } from "@/components/ui/app-logo";
+import { NavItem } from "@/components/ui/nav-item";
+import { Avatar } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
@@ -171,9 +175,7 @@ const DashboardLayout = () => {
 
             {/* Logo and app name */}
             <div className="flex items-center space-x-3">
-              <div className="bg-primary text-primary-foreground w-8 h-8 rounded-md flex items-center justify-center">
-                <DollarSign className="h-5 w-5" />
-              </div>
+              <AppLogo icon={DollarSign} size="md" />
               <div>
                 <h1 className="font-bold text-lg">FinTrack</h1>
                 <p className="text-xs text-muted-foreground hidden md:block">
@@ -195,9 +197,11 @@ const DashboardLayout = () => {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center space-x-2 p-1 rounded-full hover:bg-accent"
               >
-                <div className="bg-primary h-8 w-8 rounded-full flex items-center justify-center text-primary-foreground font-medium">
-                  <span>{user?.name?.charAt(0) || "A"}</span>
-                </div>
+                <Avatar
+                  size="sm"
+                  fallback={user?.name?.charAt(0) || "A"}
+                  className="bg-primary text-primary-foreground"
+                />
                 <span className="hidden md:block text-sm font-medium text-foreground">
                   {user?.name || "Admin"}
                 </span>
@@ -242,9 +246,7 @@ const DashboardLayout = () => {
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="bg-primary text-primary-foreground w-8 h-8 rounded-md flex items-center justify-center">
-                    <DollarSign className="h-5 w-5" />
-                  </div>
+                  <AppLogo icon={DollarSign} />
                   <div>
                     <span className="font-bold text-lg">FinTrack</span>
                     <p className="text-xs text-muted-foreground">
@@ -282,17 +284,15 @@ const DashboardLayout = () => {
                           end={item.href === "/dashboard"} // Match dashboard exactly
                         >
                           {({ isActive }) => (
-                            <>
-                              <item.icon
-                                className={cn(
-                                  "flex-shrink-0 h-5 w-5 mr-3",
-                                  isActive
-                                    ? "text-primary"
-                                    : "text-muted-foreground"
-                                )}
-                              />
-                              <span>{item.name}</span>
-                            </>
+                            <NavItem
+                              icon={item.icon}
+                              active={isActive}
+                              collapsed={false}
+                              as="span"
+                              className="w-full"
+                            >
+                              {item.name}
+                            </NavItem>
                           )}
                         </NavLink>
                       </li>
@@ -403,37 +403,17 @@ const DashboardLayout = () => {
                     {item.href ? (
                       <NavLink
                         to={item.href}
-                        className={({ isActive }) =>
-                          cn(
-                            "flex items-center py-2 rounded-md text-sm font-medium",
-                            isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-foreground hover:bg-muted",
-                            sidebarCollapsed ? "justify-center px-2" : "px-3"
-                          )
-                        }
                         end={item.href === "/dashboard"} // Match dashboard exactly
                         title={sidebarCollapsed ? item.name : ""}
                       >
                         {({ isActive }) => (
-                          <>
-                            {isActive && !sidebarCollapsed && (
-                              <div className="absolute left-0 inset-y-0 w-1 bg-primary rounded-r-full"></div>
-                            )}
-
-                            <item.icon
-                              className={cn(
-                                "flex-shrink-0 h-5 w-5",
-                                isActive
-                                  ? "text-primary"
-                                  : "text-muted-foreground"
-                              )}
-                            />
-
-                            {!sidebarCollapsed && (
-                              <span className="ml-3">{item.name}</span>
-                            )}
-                          </>
+                          <NavItem
+                            icon={item.icon}
+                            active={isActive}
+                            collapsed={sidebarCollapsed}
+                          >
+                            {item.name}
+                          </NavItem>
                         )}
                       </NavLink>
                     ) : (
@@ -474,9 +454,7 @@ const DashboardLayout = () => {
                           </button>
                         ) : (
                           // Collapsed mode - show as separator
-                          <div className="py-2 flex justify-center">
-                            <div className="w-6 h-px bg-border"></div>
-                          </div>
+                          <Separator className="my-2 mx-auto w-6" />
                         )}
 
                         {/* Expanded submenu for report items */}
