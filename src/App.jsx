@@ -7,10 +7,10 @@ import PublicRoute from "./shared/routes/PublicRoute";
 import DashboardLayout from "./shared/components/DashboardLayout";
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
-import DashboardHomePage from "./features/dashboard-home/DashboardHomePage";
 import NotFoundPage from "./features/not-found/NotFoundPage";
 
 // Dummy Components for missing pages
+const DashboardHomePage = () => <div>Dashboard Home Page</div>;
 const AccountsPage = () => <div>Accounts Page</div>;
 const TransactionsPage = () => <div>Transactions Page</div>;
 const TransactionNewPage = () => <div>New Transaction Page</div>;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router";
+import React, { useState, useEffect, useRef } from "react";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import {
   LayoutDashboard,
@@ -16,16 +16,26 @@ import {
   TrendingUp,
   PieChart,
   BarChart4,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [reportsExpanded, setReportsExpanded] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  // Auto-expand Reports section if current path is a report
+  useEffect(() => {
+    if (location.pathname.startsWith("/reports")) {
+      setReportsExpanded(true);
+    }
+  }, [location.pathname]);
 
   // Navigation items
   const navigationItems = [
@@ -99,6 +109,30 @@ const DashboardLayout = () => {
     return () => {}; // No cleanup needed for modern browsers
   }, []);
 
+  // Get current date for header
+  const today = new Date();
+  const dateOptions = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  const formattedDate = today.toLocaleDateString(undefined, dateOptions);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Toggle sidebar collapse state
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -112,49 +146,37 @@ const DashboardLayout = () => {
 
   // Toggle reports submenu
   const toggleReportsMenu = () => {
-    if (!sidebarCollapsed) {
-      setReportsExpanded(!reportsExpanded);
-    }
+    setReportsExpanded(!reportsExpanded);
   };
 
   // Determine if a reports submenu item is active
   const isReportActive = () => {
-    return window.location.pathname.startsWith("/reports");
+    return location.pathname.startsWith("/reports");
   };
-
-  // Get current date for header
-  const today = new Date();
-  const dateOptions = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
-  const formattedDate = today.toLocaleDateString(undefined, dateOptions);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Top navigation bar */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="flex items-center justify-between px-4 py-3 lg:px-6">
+      <header className="bg-card border-b border-border sticky top-0 z-30">
+        <div className="flex items-center justify-between px-4 py-2 lg:px-6">
           {/* Logo and title in header - always visible */}
           <div className="flex items-center">
             {/* Mobile menu button - only on small screens */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 mr-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100 lg:hidden"
+              className="p-2 mr-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted lg:hidden"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
 
             {/* Logo and app name */}
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 text-white w-12 h-12 rounded-xl flex items-center justify-center">
-                <span className="text-xl font-bold">$</span>
+              <div className="bg-primary text-primary-foreground w-8 h-8 rounded-md flex items-center justify-center">
+                <DollarSign className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="font-bold text-xl text-blue-600">FinTrack</h1>
-                <p className="text-xs text-gray-500 hidden md:block">
+                <h1 className="font-bold text-lg">FinTrack</h1>
+                <p className="text-xs text-muted-foreground hidden md:block">
                   Personal Accounting
                 </p>
               </div>
@@ -162,39 +184,39 @@ const DashboardLayout = () => {
           </div>
 
           {/* Date display */}
-          <div className="hidden md:block text-gray-600 text-sm">
+          <div className="hidden md:block text-muted-foreground text-sm">
             {formattedDate}
           </div>
 
           {/* User menu */}
           <div className="flex items-center">
-            <div className="relative">
+            <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100"
+                className="flex items-center space-x-2 p-1 rounded-full hover:bg-accent"
               >
-                <div className="bg-purple-600 h-8 w-8 rounded-full flex items-center justify-center text-white font-medium">
+                <div className="bg-primary h-8 w-8 rounded-full flex items-center justify-center text-primary-foreground font-medium">
                   <span>{user?.name?.charAt(0) || "A"}</span>
                 </div>
-                <span className="hidden md:block text-sm font-medium text-gray-700">
+                <span className="hidden md:block text-sm font-medium text-foreground">
                   {user?.name || "Admin"}
                 </span>
-                <ChevronDown className="h-4 w-4 text-gray-500 hidden md:block" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-40 border border-gray-200">
-                  <div className="border-b border-gray-100 pb-2 pt-1 px-4">
-                    <p className="text-sm font-medium text-gray-700">
+                <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg py-1 z-40 border border-border">
+                  <div className="border-b border-border pb-2 pt-1 px-4">
+                    <p className="text-sm font-medium text-foreground">
                       {user?.name || "Admin"}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {user?.email || "admin@example.com"}
                     </p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-accent"
                   >
                     Sign out
                   </button>
@@ -209,37 +231,173 @@ const DashboardLayout = () => {
         {/* Mobile sidebar overlay */}
         {mobileMenuOpen && (
           <div
-            className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
 
-        {/* Desktop sidebar - without icon in header section */}
+        {/* Mobile sidebar drawer */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-y-0 left-0 flex flex-col w-64 max-w-xs bg-card z-40 lg:hidden border-r border-border">
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-primary text-primary-foreground w-8 h-8 rounded-md flex items-center justify-center">
+                    <DollarSign className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-lg">FinTrack</span>
+                    <p className="text-xs text-muted-foreground">
+                      Personal Accounting
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-md text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile navigation */}
+            <nav className="flex-1 overflow-y-auto py-2">
+              <ul>
+                {navigationItems.map((item) => (
+                  <React.Fragment key={item.name}>
+                    {item.href ? (
+                      <li>
+                        <NavLink
+                          to={item.href}
+                          className={({ isActive }) =>
+                            cn(
+                              "flex items-center py-2 px-4 text-sm font-medium",
+                              isActive
+                                ? "bg-accent text-accent-foreground"
+                                : "text-foreground hover:bg-muted hover:text-foreground"
+                            )
+                          }
+                          onClick={() => setMobileMenuOpen(false)}
+                          end={item.href === "/dashboard"} // Match dashboard exactly
+                        >
+                          {({ isActive }) => (
+                            <>
+                              <item.icon
+                                className={cn(
+                                  "flex-shrink-0 h-5 w-5 mr-3",
+                                  isActive
+                                    ? "text-primary"
+                                    : "text-muted-foreground"
+                                )}
+                              />
+                              <span>{item.name}</span>
+                            </>
+                          )}
+                        </NavLink>
+                      </li>
+                    ) : (
+                      <>
+                        {/* Reports category header in mobile view */}
+                        <li>
+                          <button
+                            onClick={toggleReportsMenu}
+                            className="flex items-center w-full py-2 px-4 text-sm font-medium text-foreground hover:bg-muted"
+                          >
+                            <item.icon className="flex-shrink-0 h-5 w-5 mr-3 text-muted-foreground" />
+                            <span>{item.name}</span>
+                            <ChevronDown
+                              className={cn(
+                                "ml-auto h-4 w-4 text-muted-foreground transition-transform",
+                                reportsExpanded && "rotate-180"
+                              )}
+                            />
+                          </button>
+                        </li>
+
+                        {/* Reports submenu items in mobile view */}
+                        {reportsExpanded &&
+                          item.submenu.map((subitem) => (
+                            <li key={subitem.name}>
+                              <NavLink
+                                to={subitem.href}
+                                className={({ isActive }) =>
+                                  cn(
+                                    "flex items-center py-2 pl-12 pr-4 text-sm font-medium",
+                                    isActive
+                                      ? "bg-accent text-accent-foreground"
+                                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                  )
+                                }
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                {({ isActive }) => (
+                                  <>
+                                    <subitem.icon
+                                      className={cn(
+                                        "flex-shrink-0 h-4 w-4 mr-3",
+                                        isActive
+                                          ? "text-primary"
+                                          : "text-muted-foreground"
+                                      )}
+                                    />
+                                    <span>{subitem.name}</span>
+                                  </>
+                                )}
+                              </NavLink>
+                            </li>
+                          ))}
+                      </>
+                    )}
+                  </React.Fragment>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Mobile sign out button */}
+            <div className="p-4 border-t border-border">
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full justify-start text-destructive py-2 px-4 text-sm font-medium"
+              >
+                <LogOut className="flex-shrink-0 h-4 w-4 mr-3" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop sidebar */}
         <aside
           className={cn(
-            "bg-white border-r border-gray-200 flex-shrink-0 hidden lg:flex lg:flex-col transition-all duration-300 relative",
-            sidebarCollapsed ? "w-20" : "w-64"
+            "hidden lg:block border-r border-border bg-card h-[calc(100vh-53px)]",
+            sidebarCollapsed ? "w-16" : "w-64"
           )}
         >
-          {/* Sidebar toggle button - positioned higher at corner intersection */}
+          {/* Sidebar toggle button */}
           <button
             onClick={toggleSidebar}
-            className="absolute -right-3 flex items-center justify-center h-6 w-6 bg-white border border-gray-200 rounded-full shadow-sm text-gray-500 hover:text-blue-600 z-20"
-            style={{ top: "12px", transform: "translateY(-50%)" }} // Position at exact corner intersection
+            className="absolute left-[246px] top-[67px] flex items-center justify-center h-5 w-5 bg-background border border-border rounded-full shadow-sm text-muted-foreground hover:text-foreground z-20"
+            style={{ display: sidebarCollapsed ? "none" : "flex" }}
           >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            <ChevronLeft className="h-3 w-3" />
           </button>
 
-          {/* Sidebar content - No icon in the sidebar header and no gap */}
-          <div className="h-full flex flex-col">
-            {/* Navigation - start immediately after header */}
-            <nav className="flex-1 overflow-y-auto">
-              <ul className="pt-0">
-                {navigationItems.map((item, index) => (
+          {/* Only show expand button when collapsed */}
+          {sidebarCollapsed && (
+            <button
+              onClick={toggleSidebar}
+              className="absolute left-[59px] top-[67px] flex items-center justify-center h-5 w-5 bg-background border border-border rounded-full shadow-sm text-muted-foreground hover:text-foreground z-20"
+            >
+              <ChevronRight className="h-3 w-3" />
+            </button>
+          )}
+
+          {/* Sidebar content */}
+          <div className="h-full flex flex-col overflow-y-auto">
+            <nav className="flex-1">
+              <ul className="space-y-1 p-2">
+                {navigationItems.map((item) => (
                   <li key={item.name} className="relative">
                     {/* Regular menu items */}
                     {item.href ? (
@@ -247,26 +405,28 @@ const DashboardLayout = () => {
                         to={item.href}
                         className={({ isActive }) =>
                           cn(
-                            "flex items-center py-3 text-sm font-medium transition-all",
+                            "flex items-center py-2 rounded-md text-sm font-medium",
                             isActive
-                              ? "bg-blue-50 text-blue-600"
-                              : "text-gray-700 hover:bg-gray-50 hover:text-blue-600",
-                            sidebarCollapsed ? "justify-center px-3" : "px-4"
+                              ? "bg-accent text-accent-foreground"
+                              : "text-foreground hover:bg-muted",
+                            sidebarCollapsed ? "justify-center px-2" : "px-3"
                           )
                         }
                         end={item.href === "/dashboard"} // Match dashboard exactly
+                        title={sidebarCollapsed ? item.name : ""}
                       >
                         {({ isActive }) => (
                           <>
-                            {/* Active indicator */}
                             {isActive && !sidebarCollapsed && (
-                              <div className="absolute left-0 inset-y-0 w-1 bg-blue-500 rounded-r-full"></div>
+                              <div className="absolute left-0 inset-y-0 w-1 bg-primary rounded-r-full"></div>
                             )}
 
                             <item.icon
                               className={cn(
                                 "flex-shrink-0 h-5 w-5",
-                                isActive ? "text-blue-600" : "text-gray-500"
+                                isActive
+                                  ? "text-primary"
+                                  : "text-muted-foreground"
                               )}
                             />
 
@@ -279,44 +439,81 @@ const DashboardLayout = () => {
                     ) : (
                       /* Reports menu with submenu */
                       <>
-                        {/* When sidebar is not collapsed, show reports as clickable header */}
+                        {/* Reports header - showing differently based on collapsed state */}
                         {!sidebarCollapsed ? (
+                          // Expanded mode - show as button with chevron
                           <button
                             className={cn(
-                              "w-full flex items-center py-3 text-sm font-medium transition-all",
+                              "w-full flex items-center py-2 rounded-md text-sm font-medium",
                               isReportActive()
-                                ? "bg-blue-50 text-blue-600"
-                                : "text-gray-700 hover:bg-gray-50 hover:text-blue-600",
-                              "px-4"
+                                ? "bg-accent text-accent-foreground"
+                                : "text-foreground hover:bg-muted",
+                              "px-3"
                             )}
                             onClick={toggleReportsMenu}
                           >
                             {isReportActive() && (
-                              <div className="absolute left-0 inset-y-0 w-1 bg-blue-500 rounded-r-full"></div>
+                              <div className="absolute left-0 inset-y-0 w-1 bg-primary rounded-r-full"></div>
                             )}
 
                             <item.icon
                               className={cn(
                                 "flex-shrink-0 h-5 w-5",
                                 isReportActive()
-                                  ? "text-blue-600"
-                                  : "text-gray-500"
+                                  ? "text-primary"
+                                  : "text-muted-foreground"
                               )}
                             />
-
                             <span className="ml-3">{item.name}</span>
                             <ChevronDown
                               className={cn(
-                                "ml-auto h-4 w-4 text-gray-500 transition-transform",
+                                "ml-auto h-4 w-4 text-muted-foreground transition-transform",
                                 reportsExpanded && "rotate-180"
                               )}
                             />
                           </button>
                         ) : (
-                          /* When sidebar is collapsed, show reports as a separator */
+                          // Collapsed mode - show as separator
                           <div className="py-2 flex justify-center">
-                            <div className="w-8 h-px bg-gray-200"></div>
+                            <div className="w-6 h-px bg-border"></div>
                           </div>
+                        )}
+
+                        {/* Expanded submenu for report items */}
+                        {!sidebarCollapsed && reportsExpanded && (
+                          <ul className="mt-1 ml-5 pl-4 space-y-1">
+                            {item.submenu.map((subitem) => (
+                              <li key={subitem.name}>
+                                <NavLink
+                                  to={subitem.href}
+                                  className={({ isActive }) =>
+                                    cn(
+                                      "flex items-center py-1.5 rounded-md text-sm font-medium px-2",
+                                      isActive
+                                        ? "bg-accent/50 text-accent-foreground"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    )
+                                  }
+                                >
+                                  {({ isActive }) => (
+                                    <>
+                                      <subitem.icon
+                                        className={cn(
+                                          "flex-shrink-0 h-4 w-4",
+                                          isActive
+                                            ? "text-primary"
+                                            : "text-muted-foreground"
+                                        )}
+                                      />
+                                      <span className="ml-2">
+                                        {subitem.name}
+                                      </span>
+                                    </>
+                                  )}
+                                </NavLink>
+                              </li>
+                            ))}
+                          </ul>
                         )}
 
                         {/* In collapsed mode, show report submenu directly */}
@@ -328,10 +525,10 @@ const DashboardLayout = () => {
                                 to={subitem.href}
                                 className={({ isActive }) =>
                                   cn(
-                                    "flex justify-center items-center py-2 text-sm font-medium transition-all",
+                                    "flex justify-center items-center py-1.5 text-sm font-medium",
                                     isActive
-                                      ? "bg-blue-50 text-blue-600"
-                                      : "text-gray-600 hover:bg-gray-50 hover:text-blue-600"
+                                      ? "text-primary"
+                                      : "text-muted-foreground hover:text-foreground"
                                   )
                                 }
                                 title={subitem.name}
@@ -339,51 +536,16 @@ const DashboardLayout = () => {
                                 {({ isActive }) => (
                                   <subitem.icon
                                     className={cn(
-                                      "flex-shrink-0 h-5 w-5",
+                                      "flex-shrink-0 h-4 w-4",
                                       isActive
-                                        ? "text-blue-600"
-                                        : "text-gray-500"
+                                        ? "text-primary"
+                                        : "text-muted-foreground"
                                     )}
                                   />
                                 )}
                               </NavLink>
                             ))}
                           </div>
-                        )}
-
-                        {/* Expanded submenu for report items */}
-                        {!sidebarCollapsed && reportsExpanded && (
-                          <ul className="mt-1 pl-10 space-y-1">
-                            {item.submenu.map((subitem) => (
-                              <li key={subitem.name}>
-                                <NavLink
-                                  to={subitem.href}
-                                  className={({ isActive }) =>
-                                    cn(
-                                      "flex items-center py-2 pl-4 pr-2 text-sm font-medium transition-all",
-                                      isActive
-                                        ? "bg-blue-50 text-blue-600"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-blue-600"
-                                    )
-                                  }
-                                >
-                                  {({ isActive }) => (
-                                    <>
-                                      <subitem.icon
-                                        className={cn(
-                                          "flex-shrink-0 h-4 w-4 mr-3",
-                                          isActive
-                                            ? "text-blue-600"
-                                            : "text-gray-500"
-                                        )}
-                                      />
-                                      <span>{subitem.name}</span>
-                                    </>
-                                  )}
-                                </NavLink>
-                              </li>
-                            ))}
-                          </ul>
                         )}
                       </>
                     )}
@@ -392,142 +554,25 @@ const DashboardLayout = () => {
               </ul>
             </nav>
 
-            {/* Bottom section with logout */}
-            <div className="p-4 border-t border-gray-200 mt-auto">
+            {/* Bottom section with sign out button - matching screenshot exactly */}
+            <div className="mt-auto flex border-t border-border">
               <button
                 onClick={handleLogout}
                 className={cn(
-                  "flex items-center text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg py-2 text-sm font-medium transition-colors",
-                  sidebarCollapsed ? "justify-center px-3" : "px-4 w-full"
+                  "flex items-center text-destructive py-4 text-sm font-medium mx-auto",
+                  sidebarCollapsed ? "justify-center" : ""
                 )}
               >
-                <LogOut className="flex-shrink-0 h-5 w-5" />
-                {!sidebarCollapsed && <span className="ml-3">Sign out</span>}
+                <LogOut className="h-5 w-5 mr-2" />
+                {!sidebarCollapsed && <span>Sign out</span>}
               </button>
             </div>
           </div>
         </aside>
 
-        {/* Mobile sidebar drawer */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-y-0 left-0 flex flex-col w-full max-w-xs bg-white z-40 lg:hidden">
-            <div className="flex items-center justify-between px-4 pt-5 pb-4 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="bg-blue-600 text-white w-12 h-12 rounded-xl flex items-center justify-center">
-                  <span className="text-xl font-bold">$</span>
-                </div>
-                <div>
-                  <span className="font-bold text-xl text-blue-600">
-                    FinTrack
-                  </span>
-                  <p className="text-xs text-gray-500">Personal Accounting</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-500 hover:text-gray-600"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Mobile navigation - no gap after header */}
-            <nav className="flex-1 overflow-y-auto">
-              <ul className="pt-0">
-                {navigationItems.map((item, index) => (
-                  <React.Fragment key={item.name}>
-                    {item.href ? (
-                      <li>
-                        <NavLink
-                          to={item.href}
-                          className={({ isActive }) =>
-                            cn(
-                              "flex items-center py-3 px-4 text-sm font-medium",
-                              isActive
-                                ? "bg-blue-50 text-blue-600"
-                                : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-                            )
-                          }
-                          onClick={() => setMobileMenuOpen(false)}
-                          end={item.href === "/dashboard"} // Match dashboard exactly
-                        >
-                          {({ isActive }) => (
-                            <>
-                              <item.icon
-                                className={cn(
-                                  "flex-shrink-0 h-5 w-5 mr-3",
-                                  isActive ? "text-blue-600" : "text-gray-500"
-                                )}
-                              />
-                              <span>{item.name}</span>
-                            </>
-                          )}
-                        </NavLink>
-                      </li>
-                    ) : (
-                      <>
-                        {/* Reports category header in mobile view */}
-                        <li>
-                          <div className="flex items-center py-3 px-4 text-sm font-medium text-gray-700">
-                            <item.icon className="flex-shrink-0 h-5 w-5 mr-3 text-gray-500" />
-                            <span>{item.name}</span>
-                          </div>
-                        </li>
-
-                        {/* Reports submenu items in mobile view */}
-                        {item.submenu.map((subitem) => (
-                          <li key={subitem.name}>
-                            <NavLink
-                              to={subitem.href}
-                              className={({ isActive }) =>
-                                cn(
-                                  "flex items-center py-2 ml-8 pl-4 pr-2 text-sm font-medium",
-                                  isActive
-                                    ? "bg-blue-50 text-blue-600"
-                                    : "text-gray-600 hover:bg-gray-50 hover:text-blue-600"
-                                )
-                              }
-                              onClick={() => setMobileMenuOpen(false)}
-                            >
-                              {({ isActive }) => (
-                                <>
-                                  <subitem.icon
-                                    className={cn(
-                                      "flex-shrink-0 h-4 w-4 mr-3",
-                                      isActive
-                                        ? "text-blue-600"
-                                        : "text-gray-500"
-                                    )}
-                                  />
-                                  <span>{subitem.name}</span>
-                                </>
-                              )}
-                            </NavLink>
-                          </li>
-                        ))}
-                      </>
-                    )}
-                  </React.Fragment>
-                ))}
-              </ul>
-            </nav>
-
-            {/* Mobile sign out button */}
-            <div className="p-4 border-t border-gray-200">
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full rounded-lg py-2 px-4 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
-              >
-                <LogOut className="flex-shrink-0 h-5 w-5 mr-3" />
-                <span>Sign out</span>
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Main content area */}
-        <main className="flex-1 overflow-auto relative">
-          <div className="px-4 py-6 lg:px-8">
+        <main className="flex-1 overflow-auto bg-background">
+          <div className="p-6">
             <Outlet />
           </div>
         </main>
