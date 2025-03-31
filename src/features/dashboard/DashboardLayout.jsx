@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router";
-import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useAuth } from "../auth/hooks/useAuth";
 import {
   LayoutDashboard,
   Wallet,

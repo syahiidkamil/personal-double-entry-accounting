@@ -3,7 +3,7 @@ import { SonnerProvider } from "./shared/components/ui/sonner-provider";
 import ProtectedRoute from "./shared/routes/ProtectedRoute";
 import PublicRoute from "./shared/routes/PublicRoute";
 import AdminRoute from "./shared/routes/AdminRoute";
-import DashboardLayout from "./shared/components/DashboardLayout";
+import DashboardLayout from "./features/dashboard/DashboardLayout";
 import { AuthProvider } from "./features/auth/contexts/AuthProvider";
 
 // Import pages
@@ -130,7 +130,7 @@ const routesConfig = [
 // Initialize router only on client side
 const App = () => {
   // We need to check if we're in a browser environment before creating the router
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return null;
   }
 
