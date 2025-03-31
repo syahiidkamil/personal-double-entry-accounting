@@ -52,7 +52,9 @@ export const authService = {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     toast.info("You have been logged out");
-    window.location.href = "/login";
+    
+    // We'll let the component handle navigation
+    return true;
   },
 
   isAuthenticated: () => {
@@ -69,7 +71,9 @@ export const authService = {
 
       // Check if token is expired
       if (decoded.exp && decoded.exp < currentTime) {
-        authService.logout();
+        // Just clean up storage without navigating
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
         return false;
       }
 

@@ -46,9 +46,12 @@ export const AuthProvider = ({ children }) => {
     return false;
   };
 
+  // Now logout just calls authService.logout() and resets the user state
+  // The component that calls this function will handle navigation
   const logout = () => {
     authService.logout();
     setUser(null);
+    return true; // Return true to indicate logout was successful
   };
 
   const value = {

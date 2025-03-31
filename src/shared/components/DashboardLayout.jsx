@@ -145,7 +145,7 @@ const DashboardLayout = () => {
   // Handle logout action
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   // Toggle reports submenu

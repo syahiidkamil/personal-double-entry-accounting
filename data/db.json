@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "password": "adminpassword",
+      "role": "admin",
+      "createdAt": "2023-04-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Regular User",
+      "email": "user@example.com",
+      "password": "userpassword",
+      "role": "user",
+      "createdAt": "2023-04-01T00:00:00.000Z"
+    }
+  ],
+  "accounts": [],
+  "transactions": []
+}

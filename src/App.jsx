@@ -1,9 +1,9 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { AuthProvider } from "./features/auth/contexts/AuthProvider";
 import { SonnerProvider } from "./shared/components/ui/sonner-provider";
 import ProtectedRoute from "./shared/routes/ProtectedRoute";
 import PublicRoute from "./shared/routes/PublicRoute";
 import DashboardLayout from "./shared/components/DashboardLayout";
+import { AuthProvider } from "./features/auth/contexts/AuthProvider";
 
 // Import pages
 import LoginPage from "./features/auth/LoginPage";
