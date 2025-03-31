@@ -1,0 +1,41 @@
+{
+  "users": [
+    {
+      "id": "admin123",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "password": "adminpassword",
+      "role": "admin",
+      "createdAt": "2025-02-28T12:00:00.000Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "1",
+      "name": "Classic T-Shirt",
+      "description": "A comfortable cotton t-shirt perfect for everyday wear.",
+      "price": 19.99,
+      "imageUrl": "https://via.placeholder.com/300",
+      "createdAt": "2025-02-28T12:00:00.000Z",
+      "updatedAt": "2025-02-28T12:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "name": "Slim Fit Jeans",
+      "description": "High-quality denim jeans with a modern slim fit design.",
+      "price": 49.99,
+      "imageUrl": "https://via.placeholder.com/300",
+      "createdAt": "2025-02-28T12:00:00.000Z",
+      "updatedAt": "2025-02-28T12:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "name": "Casual Sneakers",
+      "description": "Lightweight and stylish sneakers for everyday casual wear.",
+      "price": 59.99,
+      "imageUrl": "https://via.placeholder.com/300",
+      "createdAt": "2025-02-28T12:00:00.000Z",
+      "updatedAt": "2025-02-28T12:00:00.000Z"
+    }
+  ]
+}
