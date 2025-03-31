@@ -1,5 +1,5 @@
-// API endpoint for managing invitation codes
-// This endpoint should connect to your actual database
+import prisma from '../../utils/db/prisma';
+import { runMiddleware, authMiddleware, adminMiddleware } from '../../utils/middleware/auth';
 
 // Generate a random invitation code
 function generateInvitationCode() {
@@ -18,40 +18,60 @@ function generateInvitationCode() {
   return result;
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
+  // Check authentication and admin role
+  try {
+    await runMiddleware(req, res, authMiddleware);
+    await runMiddleware(req, res, adminMiddleware);
+  } catch (error) {
+    return res.status(error.statusCode || 401).json({ 
+      success: false, 
+      message: error.message || 'Authentication required' 
+    });
+  }
+
   // Handle GET request - list invitation codes
   if (req.method === 'GET') {
     try {
-      // Verify authentication
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Authentication required' 
-        });
-      }
+      // Fetch all invitation codes
+      const invitationCodes = await prisma.invitationCode.findMany({
+        orderBy: {
+          created_at: 'desc'
+        },
+        include: {
+          creator: {
+            select: {
+              name: true,
+              email: true
+            }
+          },
+          user: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
 
-      const token = authHeader.substring(7);
-      const decodedToken = verifyToken(token);
-
-      if (!decodedToken || decodedToken.role !== 'admin') {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Forbidden: Admin access required' 
-        });
-      }
-
-      // Read database
-      const db = readDB();
-      
-      // Initialize invitation_codes array if it doesn't exist
-      if (!db.invitation_codes) {
-        db.invitation_codes = [];
-      }
+      // Format response data
+      const formattedCodes = invitationCodes.map(code => ({
+        id: code.id,
+        code: code.code,
+        notes: code.notes,
+        createdBy: code.created_by,
+        creatorName: code.creator.name,
+        createdAt: code.created_at,
+        expiresAt: code.expires_at,
+        used: !!code.used_by,
+        usedBy: code.used_by,
+        userName: code.user?.name,
+        usedAt: code.used_at
+      }));
 
       return res.status(200).json({
         success: true,
-        invitationCodes: db.invitation_codes
+        invitationCodes: formattedCodes
       });
     } catch (error) {
       console.error('List invitation codes error:', error);
@@ -65,67 +85,64 @@ export default function handler(req, res) {
   // Handle POST request - create invitation code
   else if (req.method === 'POST') {
     try {
-      // Verify authentication
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Authentication required' 
-        });
-      }
-
-      const token = authHeader.substring(7);
-      const decodedToken = verifyToken(token);
-
-      if (!decodedToken || decodedToken.role !== 'admin') {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Forbidden: Admin access required' 
-        });
-      }
-
-      // Get notes from request body
       const { notes } = req.body;
-
-      // Read database
-      const db = readDB();
-      
-      // Initialize invitation_codes array if it doesn't exist
-      if (!db.invitation_codes) {
-        db.invitation_codes = [];
-      }
+      const userId = req.user.id;
 
       // Generate a unique code
       let code;
-      do {
+      let isUnique = false;
+      
+      while (!isUnique) {
         code = generateInvitationCode();
-      } while (db.invitation_codes.some(ic => ic.code === code));
+        const existingCode = await prisma.invitationCode.findUnique({
+          where: { code }
+        });
+        
+        if (!existingCode) {
+          isUnique = true;
+        }
+      }
 
       // Calculate expiration (1 hour from now)
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 1);
 
       // Create new invitation code
-      const newInvitationCode = {
-        id: Date.now().toString(),
-        code,
-        notes: notes || '',
-        createdBy: decodedToken.id,
-        createdAt: new Date().toISOString(),
-        expiresAt: expiresAt.toISOString(),
+      const newInvitationCode = await prisma.invitationCode.create({
+        data: {
+          code,
+          notes: notes || null,
+          created_by: userId,
+          expires_at: expiresAt
+        },
+        include: {
+          creator: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      // Format response
+      const invitationCodeResponse = {
+        id: newInvitationCode.id,
+        code: newInvitationCode.code,
+        notes: newInvitationCode.notes,
+        createdBy: newInvitationCode.created_by,
+        creatorName: newInvitationCode.creator.name,
+        createdAt: newInvitationCode.created_at,
+        expiresAt: newInvitationCode.expires_at,
         used: false,
         usedBy: null,
         usedAt: null
       };
 
-      // Add to database
-      db.invitation_codes.push(newInvitationCode);
-      writeDB(db);
-
       return res.status(201).json({
         success: true,
         message: 'Invitation code created successfully',
-        invitationCode: newInvitationCode
+        invitationCode: invitationCodeResponse
       });
     } catch (error) {
       console.error('Create invitation code error:', error);

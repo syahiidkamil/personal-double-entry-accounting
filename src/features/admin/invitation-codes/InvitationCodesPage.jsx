@@ -32,7 +32,17 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Clipboard, ClipboardCheck, Plus, RefreshCw, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { 
+  Clipboard, 
+  ClipboardCheck, 
+  Plus, 
+  RefreshCw, 
+  Clock, 
+  CheckCircle2, 
+  XCircle,
+  Link,
+  LinkCheck
+} from "lucide-react";
 
 const InvitationCodesPage = () => {
   const { user } = useAuth();
@@ -42,6 +52,7 @@ const InvitationCodesPage = () => {
   const [notes, setNotes] = useState("");
   const [generatingCode, setGeneratingCode] = useState(false);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
+  const [copiedLinkId, setCopiedLinkId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -106,6 +117,26 @@ const InvitationCodesPage = () => {
       })
       .catch(() => {
         toast.error("Failed to copy code");
+      });
+  };
+
+  const copyRegistrationLink = (code, id) => {
+    // Create registration link with invitation code
+    const baseUrl = window.location.origin;
+    const registrationUrl = `${baseUrl}/register?code=${code}`;
+    
+    navigator.clipboard.writeText(registrationUrl)
+      .then(() => {
+        setCopiedLinkId(id);
+        toast.success("Registration link copied to clipboard");
+        
+        // Reset copied state after 3 seconds
+        setTimeout(() => {
+          setCopiedLinkId(null);
+        }, 3000);
+      })
+      .catch(() => {
+        toast.error("Failed to copy registration link");
       });
   };
 
@@ -214,18 +245,37 @@ const InvitationCodesPage = () => {
                           {code.notes || "-"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(code.code, code.id)}
-                            disabled={used || expired}
-                          >
-                            {copiedCodeId === code.id ? (
-                              <ClipboardCheck className="h-4 w-4" />
-                            ) : (
-                              <Clipboard className="h-4 w-4" />
-                            )}
-                          </Button>
+                          <div className="flex justify-end space-x-1">
+                            {/* Copy Code button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(code.code, code.id)}
+                              disabled={used || expired}
+                              title="Copy Code"
+                            >
+                              {copiedCodeId === code.id ? (
+                                <ClipboardCheck className="h-4 w-4" />
+                              ) : (
+                                <Clipboard className="h-4 w-4" />
+                              )}
+                            </Button>
+                            
+                            {/* Copy Registration Link button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyRegistrationLink(code.code, code.id)}
+                              disabled={used || expired}
+                              title="Copy Registration Link"
+                            >
+                              {copiedLinkId === code.id ? (
+                                <LinkCheck className="h-4 w-4" />
+                              ) : (
+                                <Link className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

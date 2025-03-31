@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router";
 import { useAuth } from "./hooks/useAuth";
 import {
   Card,
@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
+  CardDescription,
 } from "../../shared/components/ui/card";
 import { Button } from "../../shared/components/ui/button";
 import { Input } from "../../shared/components/ui/input";
@@ -22,6 +23,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "../../shared/components/ui/form";
 
 const formSchema = z
@@ -30,6 +32,7 @@ const formSchema = z
     email: z.string().email("Please enter a valid email address"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Confirm password is required"),
+    invitationCode: z.string().min(1, "Invitation code is required"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -38,9 +41,13 @@ const formSchema = z
 
 const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
-
+  const location = useLocation();
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  // Extract invitation code from URL query params if available
+  const queryParams = new URLSearchParams(location.search);
+  const invitationCodeFromUrl = queryParams.get('code');
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -49,8 +56,16 @@ const RegisterPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      invitationCode: invitationCodeFromUrl || "",
     },
   });
+
+  // Update form if invitation code in URL changes
+  useEffect(() => {
+    if (invitationCodeFromUrl) {
+      form.setValue('invitationCode', invitationCodeFromUrl);
+    }
+  }, [invitationCodeFromUrl, form]);
 
   const onSubmit = async (values) => {
     setIsLoading(true);
@@ -60,6 +75,7 @@ const RegisterPage = () => {
         name: values.name,
         email: values.email,
         password: "***",
+        invitationCode: values.invitationCode,
       });
 
       // Call the register function from useAuth hook
@@ -67,6 +83,7 @@ const RegisterPage = () => {
         name: values.name,
         email: values.email,
         password: values.password,
+        invitationCode: values.invitationCode,
       });
 
       console.log("Registration result:", success);
@@ -92,6 +109,9 @@ const RegisterPage = () => {
             <CardTitle className="text-2xl font-bold text-center">
               Create an account
             </CardTitle>
+            <CardDescription className="text-center">
+              Enter your details below to create your account
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -151,6 +171,26 @@ const RegisterPage = () => {
                       <FormControl>
                         <PasswordInput placeholder="••••••••" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="invitationCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invitation Code</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your invitation code" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        You need an invitation code to register. Please contact an administrator if you don't have one.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

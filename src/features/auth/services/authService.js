@@ -108,7 +108,7 @@ const authService = {
     if (typeof window === 'undefined') {
       return null;
     }
-    return localStorage.getItem("token");
+    return localStorage.setItem("token");
   },
   
   updateProfile: async (userData) => {
@@ -152,6 +152,25 @@ const authService = {
     } catch (error) {
       console.error("Error fetching profile:", error);
       return { success: false, user: null };
+    }
+  },
+  
+  validateInvitationCode: async (invitationCode) => {
+    try {
+      const response = await axiosInstance.post("/api/auth/validate-invitation", {
+        invitationCode
+      });
+      
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        expiresAt: response.data.expiresAt
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Invalid invitation code"
+      };
     }
   }
 };

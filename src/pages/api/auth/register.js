@@ -22,6 +22,14 @@ export default async function handler(req, res) {
       });
     }
 
+    // Validate invitation code
+    if (!invitationCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation code is required'
+      });
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
@@ -34,29 +42,67 @@ export default async function handler(req, res) {
       });
     }
 
-    // For now, bypass invitation code validation for development
-    // TODO: Implement invitation code validation in production
-    // This will be implemented in ticket AUTH-3
+    // Check if invitation code exists and is valid
+    const invitation = await prisma.invitationCode.findUnique({
+      where: { code: invitationCode }
+    });
+
+    if (!invitation) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid invitation code'
+      });
+    }
+
+    // Check if invitation code is expired
+    if (new Date(invitation.expires_at) < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation code has expired'
+      });
+    }
+
+    // Check if invitation code is already used
+    if (invitation.used_by) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation code has already been used'
+      });
+    }
 
     // Hash password
     const password_hash = await hashPassword(password);
 
-    // Create new user
-    const newUser = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password_hash,
-        role: 'REGULAR',
-        preferences: {
-          mainCurrency: 'IDR',
-          currencies: ['IDR']
+    // Create new user and mark invitation code as used in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create new user
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          password_hash,
+          role: 'REGULAR',
+          preferences: {
+            mainCurrency: 'IDR',
+            currencies: ['IDR']
+          }
         }
-      }
+      });
+
+      // Mark invitation code as used
+      await tx.invitationCode.update({
+        where: { id: invitation.id },
+        data: {
+          used_by: newUser.id,
+          used_at: new Date()
+        }
+      });
+
+      return newUser;
     });
 
     // Create token
-    const token = generateToken(newUser);
+    const token = generateToken(result);
 
     // Return sanitized user data and token
     return res.status(201).json({
@@ -64,11 +110,11 @@ export default async function handler(req, res) {
       message: 'User registered successfully',
       token,
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        preferences: newUser.preferences
+        id: result.id,
+        name: result.name,
+        email: result.email,
+        role: result.role,
+        preferences: result.preferences
       }
     });
   } catch (error) {
