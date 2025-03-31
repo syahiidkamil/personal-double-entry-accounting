@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
+import { useSearch } from "../../../shared/hooks/useSearch";
 import axiosInstance from "../../../shared/lib/axios";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -41,8 +42,136 @@ import {
   CheckCircle2, 
   XCircle,
   Link,
-  LinkCheck
+  LinkCheck,
+  Search
 } from "lucide-react";
+
+// Memoized table component for better performance
+const InvitationCodesTable = memo(function InvitationCodesTable({ 
+  invitationCodes, 
+  copyToClipboard,
+  copyRegistrationLink,
+  copiedCodeId,
+  copiedLinkId,
+  isStale
+}) {
+  // Helper function to check if code is expired
+  const isCodeExpired = (expiresAt) => {
+    return new Date(expiresAt) < new Date();
+  };
+
+  // Format relative time (e.g., "2 minutes ago")
+  const formatRelativeTime = (date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return format(new Date(date), "MMM d, yyyy");
+  };
+
+  return (
+    <div
+      style={{
+        opacity: isStale ? 0.7 : 1,
+        transition: isStale ? 'opacity 0.2s 0.2s linear' : 'opacity 0s 0s linear'
+      }}
+    >
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Code</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Notes</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {invitationCodes.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                No invitation codes found. Generate a new code to get started.
+              </TableCell>
+            </TableRow>
+          ) : (
+            invitationCodes.map((code) => {
+              const expired = isCodeExpired(code.expiresAt);
+              const used = code.used;
+              
+              return (
+                <TableRow key={code.id}>
+                  <TableCell className="font-mono">{code.code}</TableCell>
+                  <TableCell>{formatRelativeTime(code.createdAt)}</TableCell>
+                  <TableCell className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+                    {format(new Date(code.expiresAt), "MMM d, h:mm a")}
+                  </TableCell>
+                  <TableCell>
+                    {used ? (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3 text-success" />
+                        Used
+                      </Badge>
+                    ) : expired ? (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <XCircle className="h-3 w-3" />
+                        Expired
+                      </Badge>
+                    ) : (
+                      <Badge variant="success" className="flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Active
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    {code.notes || "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-1">
+                      {/* Copy Code button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(code.code, code.id)}
+                        disabled={used || expired}
+                        title="Copy Code"
+                      >
+                        {copiedCodeId === code.id ? (
+                          <ClipboardCheck className="h-4 w-4" />
+                        ) : (
+                          <Clipboard className="h-4 w-4" />
+                        )}
+                      </Button>
+                      
+                      {/* Copy Registration Link button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyRegistrationLink(code.code, code.id)}
+                        disabled={used || expired}
+                        title="Copy Registration Link"
+                      >
+                        {copiedLinkId === code.id ? (
+                          <LinkCheck className="h-4 w-4" />
+                        ) : (
+                          <Link className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+});
 
 const InvitationCodesPage = () => {
   const { user } = useAuth();
@@ -55,9 +184,37 @@ const InvitationCodesPage = () => {
   const [copiedLinkId, setCopiedLinkId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Add search functionality
+  const { 
+    inputValue: searchQuery, 
+    debouncedValue: debouncedSearchQuery,
+    deferredValue: deferredSearchQuery,
+    isStale,
+    handleInputChange 
+  } = useSearch('');
+
+  // Track filtered codes
+  const [filteredCodes, setFilteredCodes] = useState([]);
+
   useEffect(() => {
     fetchInvitationCodes();
   }, []);
+
+  // Filter codes when search query or codes change
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) {
+      setFilteredCodes(invitationCodes);
+      return;
+    }
+
+    const lowerQuery = debouncedSearchQuery.toLowerCase();
+    const filtered = invitationCodes.filter(code => 
+      code.code.toLowerCase().includes(lowerQuery) ||
+      (code.notes && code.notes.toLowerCase().includes(lowerQuery))
+    );
+    
+    setFilteredCodes(filtered);
+  }, [debouncedSearchQuery, invitationCodes]);
 
   const fetchInvitationCodes = async () => {
     setLoading(true);
@@ -65,7 +222,9 @@ const InvitationCodesPage = () => {
       const response = await axiosInstance.get("/api/admin/invitation-codes");
       
       if (response.data.success) {
-        setInvitationCodes(response.data.invitationCodes || []);
+        const codes = response.data.invitationCodes || [];
+        setInvitationCodes(codes);
+        setFilteredCodes(codes);
       } else {
         toast.error("Failed to fetch invitation codes");
       }
@@ -92,6 +251,7 @@ const InvitationCodesPage = () => {
       if (response.data.success) {
         toast.success("Invitation code generated successfully");
         setInvitationCodes([response.data.invitationCode, ...invitationCodes]);
+        setFilteredCodes([response.data.invitationCode, ...filteredCodes]);
         setGenerateDialogOpen(false);
         setNotes("");
       } else {
@@ -140,21 +300,6 @@ const InvitationCodesPage = () => {
       });
   };
 
-  const isCodeExpired = (expiresAt) => {
-    return new Date(expiresAt) < new Date();
-  };
-
-  // Format relative time (e.g., "2 minutes ago")
-  const formatRelativeTime = (date) => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
-    
-    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    return format(new Date(date), "MMM d, yyyy");
-  };
-
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Invitation Codes</h1>
@@ -189,99 +334,40 @@ const InvitationCodesPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {/* Add search input */}
+          <div className="mb-4 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search codes or notes..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          {loading && !isStale ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : invitationCodes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No invitation codes found. Generate a new code to get started.
-            </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invitationCodes.map((code) => {
-                    const expired = isCodeExpired(code.expiresAt);
-                    const used = code.used;
-                    
-                    return (
-                      <TableRow key={code.id}>
-                        <TableCell className="font-mono">{code.code}</TableCell>
-                        <TableCell>{formatRelativeTime(code.createdAt)}</TableCell>
-                        <TableCell className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                          {format(new Date(code.expiresAt), "MMM d, h:mm a")}
-                        </TableCell>
-                        <TableCell>
-                          {used ? (
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3 text-success" />
-                              Used
-                            </Badge>
-                          ) : expired ? (
-                            <Badge variant="destructive" className="flex items-center gap-1">
-                              <XCircle className="h-3 w-3" />
-                              Expired
-                            </Badge>
-                          ) : (
-                            <Badge variant="success" className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Active
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          {code.notes || "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1">
-                            {/* Copy Code button */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(code.code, code.id)}
-                              disabled={used || expired}
-                              title="Copy Code"
-                            >
-                              {copiedCodeId === code.id ? (
-                                <ClipboardCheck className="h-4 w-4" />
-                              ) : (
-                                <Clipboard className="h-4 w-4" />
-                              )}
-                            </Button>
-                            
-                            {/* Copy Registration Link button */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyRegistrationLink(code.code, code.id)}
-                              disabled={used || expired}
-                              title="Copy Registration Link"
-                            >
-                              {copiedLinkId === code.id ? (
-                                <LinkCheck className="h-4 w-4" />
-                              ) : (
-                                <Link className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <InvitationCodesTable 
+                invitationCodes={filteredCodes}
+                copyToClipboard={copyToClipboard}
+                copyRegistrationLink={copyRegistrationLink}
+                copiedCodeId={copiedCodeId}
+                copiedLinkId={copiedLinkId}
+                isStale={isStale}
+              />
+
+              {/* Show loading indicator when refreshing with stale data */}
+              {isStale && loading && (
+                <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <span>Updating results...</span>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

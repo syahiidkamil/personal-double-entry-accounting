@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
+import { useSearch } from "../../../shared/hooks/useSearch";
 import axiosInstance from "../../../shared/lib/axios";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -39,25 +40,106 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Search, UserCog, AlertTriangle } from "lucide-react";
 
+// Memoized user table component to prevent unnecessary re-renders
+const UserTable = memo(function UserTable({ users, onOpenConfirmDialog, isStale }) {
+  return (
+    <div
+      style={{
+        opacity: isStale ? 0.7 : 1,
+        transition: isStale ? 'opacity 0.2s 0.2s linear' : 'opacity 0s 0s linear'
+      }}
+    >
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                No users found
+              </TableCell>
+            </TableRow>
+          ) : (
+            users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={user.role === "ADMIN" ? "default" : "outline"}
+                  >
+                    {user.role === "ADMIN" ? "Admin" : "Regular"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {user.created_at 
+                    ? format(new Date(user.created_at), 'MMM d, yyyy') 
+                    : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={user.active ? "success" : "destructive"}
+                  >
+                    {user.active ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant={user.active ? "destructive" : "default"}
+                    size="sm"
+                    onClick={() => onOpenConfirmDialog(
+                      user,
+                      user.active ? "deactivate" : "activate"
+                    )}
+                    disabled={user.id === 1} // Disable action for default admin account
+                  >
+                    {user.active ? "Deactivate" : "Activate"}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+});
+
 const UserManagementPage = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0,
   });
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [actionType, setActionType] = useState("");
 
-  // Fetch users on component mount and when pagination or search changes
+  // Use our custom search hook for optimized search
+  const { 
+    inputValue: searchQuery, 
+    debouncedValue: debouncedSearchQuery,
+    deferredValue: deferredSearchQuery,
+    isStale,
+    handleInputChange 
+  } = useSearch("", 300); // 300ms debounce delay
+
+  // Fetch users on component mount and when debounced pagination or search changes
   useEffect(() => {
     fetchUsers();
-  }, [pagination.page, searchQuery]);
+  }, [pagination.page, debouncedSearchQuery]); // Use debounced value for API calls
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -66,7 +148,7 @@ const UserManagementPage = () => {
         params: {
           page: pagination.page,
           limit: pagination.limit,
-          search: searchQuery,
+          search: debouncedSearchQuery,
         },
       });
 
@@ -77,7 +159,10 @@ const UserManagementPage = () => {
         toast.error("Failed to fetch users");
       }
     } catch (error) {
-      toast.error("Error fetching users: " + (error.response?.data?.message || error.message));
+      toast.error(
+        "Error fetching users: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setLoading(false);
     }
@@ -85,7 +170,7 @@ const UserManagementPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Reset to first page when searching
+    // Reset to first page when searching (handled in effect above)
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -123,7 +208,10 @@ const UserManagementPage = () => {
         toast.error(response.data.message);
       }
     } catch (error) {
-      toast.error("Error updating user: " + (error.response?.data?.message || error.message));
+      toast.error(
+        "Error updating user: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setConfirmDialogOpen(false);
       setSelectedUser(null);
@@ -133,7 +221,7 @@ const UserManagementPage = () => {
   // Function to render pagination controls
   const renderPagination = () => {
     const { page, totalPages } = pagination;
-    
+
     return (
       <Pagination>
         <PaginationContent>
@@ -143,7 +231,7 @@ const UserManagementPage = () => {
               disabled={page <= 1}
             />
           </PaginationItem>
-          
+
           {/* Always show first page */}
           {page > 2 && (
             <PaginationItem>
@@ -152,14 +240,14 @@ const UserManagementPage = () => {
               </PaginationLink>
             </PaginationItem>
           )}
-          
+
           {/* Show ellipsis if needed */}
           {page > 3 && (
             <PaginationItem>
               <PaginationLink disabled>...</PaginationLink>
             </PaginationItem>
           )}
-          
+
           {/* Show current page and adjacent pages */}
           {page > 1 && (
             <PaginationItem>
@@ -168,11 +256,11 @@ const UserManagementPage = () => {
               </PaginationLink>
             </PaginationItem>
           )}
-          
+
           <PaginationItem>
             <PaginationLink isActive>{page}</PaginationLink>
           </PaginationItem>
-          
+
           {page < totalPages && (
             <PaginationItem>
               <PaginationLink onClick={() => handlePageChange(page + 1)}>
@@ -180,14 +268,14 @@ const UserManagementPage = () => {
               </PaginationLink>
             </PaginationItem>
           )}
-          
+
           {/* Show ellipsis if needed */}
           {page < totalPages - 2 && (
             <PaginationItem>
               <PaginationLink disabled>...</PaginationLink>
             </PaginationItem>
           )}
-          
+
           {/* Always show last page */}
           {page < totalPages - 1 && (
             <PaginationItem>
@@ -196,7 +284,7 @@ const UserManagementPage = () => {
               </PaginationLink>
             </PaginationItem>
           )}
-          
+
           <PaginationItem>
             <PaginationNext
               onClick={() => page < totalPages && handlePageChange(page + 1)}
@@ -211,12 +299,13 @@ const UserManagementPage = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-4">User Management</h1>
-      
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-xl">Users</CardTitle>
           <CardDescription>
-            Manage all users in the system. You can activate or deactivate accounts as needed.
+            Manage all users in the system. You can activate or deactivate
+            accounts as needed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -229,7 +318,7 @@ const UserManagementPage = () => {
                 placeholder="Search by name or email..."
                 className="pl-8"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleInputChange}
               />
             </div>
             <Button type="submit" className="ml-2">
@@ -238,71 +327,31 @@ const UserManagementPage = () => {
           </form>
 
           {/* Users table */}
-          {loading ? (
+          {loading && !isStale ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? "No users found matching your search criteria" : "No users found"}
-            </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={user.role === "admin" ? "default" : "outline"}
-                        >
-                          {user.role === "admin" ? "Admin" : "Regular"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={user.active ? "success" : "destructive"}
-                        >
-                          {user.active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant={user.active ? "destructive" : "default"}
-                          size="sm"
-                          onClick={() => openConfirmDialog(user, user.active ? "deactivate" : "activate")}
-                          disabled={user.id === 1} // Disable action for default admin account
-                        >
-                          {user.active ? "Deactivate" : "Activate"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <UserTable 
+                users={users} 
+                onOpenConfirmDialog={openConfirmDialog}
+                isStale={isStale}
+              />
+              
+              {/* Show loading indicator below the table when updating stale content */}
+              {isStale && loading && (
+                <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <span>Updating results...</span>
+                </div>
+              )}
             </div>
           )}
 
           {/* Pagination */}
           {!loading && users.length > 0 && pagination.totalPages > 1 && (
-            <div className="mt-4 flex justify-center">
-              {renderPagination()}
-            </div>
+            <div className="mt-4 flex justify-center">{renderPagination()}</div>
           )}
         </CardContent>
       </Card>
@@ -313,7 +362,8 @@ const UserManagementPage = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-warning" />
-              Confirm {actionType === "deactivate" ? "Deactivation" : "Activation"}
+              Confirm{" "}
+              {actionType === "deactivate" ? "Deactivation" : "Activation"}
             </DialogTitle>
             <DialogDescription>
               {actionType === "deactivate"
@@ -321,22 +371,25 @@ const UserManagementPage = () => {
                 : "Activating a user will allow them to log in and access the system again."}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedUser && (
             <div className="py-2">
               <p className="font-medium">
-                {actionType === "deactivate" ? "Deactivate" : "Activate"} this user?
+                {actionType === "deactivate" ? "Deactivate" : "Activate"} this
+                user?
               </p>
               <div className="mt-2 flex items-center p-2 border rounded bg-muted">
                 <UserCog className="h-5 w-5 text-muted-foreground mr-2" />
                 <div>
                   <p className="font-medium">{selectedUser.name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.email}
+                  </p>
                 </div>
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button
               variant="outline"
