@@ -274,7 +274,7 @@ const DashboardLayout = () => {
                           to={item.href}
                           className={({ isActive }) =>
                             cn(
-                              "flex items-center py-2 px-4 text-sm font-medium",
+                              "flex items-center py-3 px-4 text-base font-medium",
                               isActive
                                 ? "bg-accent text-accent-foreground"
                                 : "text-foreground hover:bg-muted hover:text-foreground"
@@ -302,7 +302,7 @@ const DashboardLayout = () => {
                         <li>
                           <button
                             onClick={toggleReportsMenu}
-                            className="flex items-center w-full py-2 px-4 text-sm font-medium text-foreground hover:bg-muted"
+                            className="flex items-center w-full py-3 px-4 text-base font-medium text-foreground hover:bg-muted"
                           >
                             <item.icon className="flex-shrink-0 h-5 w-5 mr-3 text-muted-foreground" />
                             <span>{item.name}</span>
@@ -323,7 +323,7 @@ const DashboardLayout = () => {
                                 to={subitem.href}
                                 className={({ isActive }) =>
                                   cn(
-                                    "flex items-center py-2 pl-12 pr-4 text-sm font-medium",
+                                    "flex items-center py-3 pl-12 pr-4 text-base font-medium",
                                     isActive
                                       ? "bg-accent text-accent-foreground"
                                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -396,7 +396,7 @@ const DashboardLayout = () => {
           {/* Sidebar content */}
           <div className="h-full flex flex-col overflow-y-auto">
             <nav className="flex-1">
-              <ul className="space-y-1 p-2">
+              <ul className="space-y-2 p-2">
                 {navigationItems.map((item) => (
                   <li key={item.name} className="relative">
                     {/* Regular menu items */}
@@ -424,7 +424,7 @@ const DashboardLayout = () => {
                           // Expanded mode - show as button with chevron
                           <button
                             className={cn(
-                              "w-full flex items-center py-2 rounded-md text-sm font-medium",
+                              "w-full flex items-center py-3 rounded-md text-base font-medium",
                               isReportActive()
                                 ? "bg-accent text-accent-foreground"
                                 : "text-foreground hover:bg-muted",
@@ -433,7 +433,7 @@ const DashboardLayout = () => {
                             onClick={toggleReportsMenu}
                           >
                             {isReportActive() && (
-                              <div className="absolute left-0 inset-y-0 w-1 bg-primary rounded-r-full"></div>
+                              <div className="absolute left-0 inset-y-0 w-2 bg-primary rounded-r-full"></div>
                             )}
 
                             <item.icon
@@ -459,16 +459,16 @@ const DashboardLayout = () => {
 
                         {/* Expanded submenu for report items */}
                         {!sidebarCollapsed && reportsExpanded && (
-                          <ul className="mt-1 ml-5 pl-4 space-y-1">
+                          <ul className="mt-2 ml-5 pl-4 space-y-2">
                             {item.submenu.map((subitem) => (
                               <li key={subitem.name}>
                                 <NavLink
                                   to={subitem.href}
                                   className={({ isActive }) =>
                                     cn(
-                                      "flex items-center py-1.5 rounded-md text-sm font-medium px-2",
+                                      "flex items-center py-2.5 rounded-md text-base font-medium px-3",
                                       isActive
-                                        ? "bg-accent/50 text-accent-foreground"
+                                        ? "bg-accent text-accent-foreground font-bold"
                                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                     )
                                   }
@@ -477,7 +477,7 @@ const DashboardLayout = () => {
                                     <>
                                       <subitem.icon
                                         className={cn(
-                                          "flex-shrink-0 h-4 w-4",
+                                          "flex-shrink-0 h-5 w-5",
                                           isActive
                                             ? "text-primary"
                                             : "text-muted-foreground"
@@ -503,7 +503,7 @@ const DashboardLayout = () => {
                                 to={subitem.href}
                                 className={({ isActive }) =>
                                   cn(
-                                    "flex justify-center items-center py-1.5 text-sm font-medium",
+                                    "flex justify-center items-center py-2 text-base font-medium",
                                     isActive
                                       ? "text-primary"
                                       : "text-muted-foreground hover:text-foreground"

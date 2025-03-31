@@ -17,9 +17,9 @@ const NavItem = React.forwardRef(
       <div
         ref={ref}
         className={cn(
-          "flex items-center py-2 rounded-md text-sm font-medium",
+          "flex items-center py-3 rounded-md text-base font-medium",
           active
-            ? "bg-accent text-accent-foreground"
+            ? "bg-accent text-accent-foreground font-bold"
             : "text-foreground hover:bg-muted",
           collapsed ? "justify-center px-2" : "px-3",
           className
@@ -27,13 +27,13 @@ const NavItem = React.forwardRef(
         {...props}
       >
         {active && !collapsed && (
-          <div className="absolute left-0 inset-y-0 w-1 bg-primary rounded-r-full"></div>
+          <div className="absolute left-0 inset-y-0 w-2 bg-primary rounded-r-full"></div>
         )}
 
         {Icon && (
           <Icon
             className={cn(
-              "flex-shrink-0 h-5 w-5",
+              "flex-shrink-0 h-6 w-6",
               active ? "text-primary" : "text-muted-foreground"
             )}
           />
