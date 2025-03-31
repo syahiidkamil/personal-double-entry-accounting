@@ -1,7 +1,8 @@
 import { useState, useEffect, useDeferredValue } from 'react';
 
 /**
- * Custom hook that combines debouncing and deferred values for optimized search experience
+ * Custom hook that provides debounced search functionality
+ * This simplified version combines debouncing and deferred values for a better UX
  * 
  * @param {string} initialValue - Initial search value
  * @param {number} debounceDelay - Delay in ms before applying the search value (default: 300ms)
@@ -11,7 +12,7 @@ export function useSearch(initialValue = '', debounceDelay = 300) {
   // Immediate state for input field
   const [inputValue, setInputValue] = useState(initialValue);
   
-  // Debounced state (updates after delay)
+  // Debounced state (updates after delay) - good for API calls
   const [debouncedValue, setDebouncedValue] = useState(initialValue);
   
   // Deferred value for rendering expensive UI (handled by React)
@@ -35,12 +36,15 @@ export function useSearch(initialValue = '', debounceDelay = 300) {
   };
   
   return {
-    inputValue,          // Current input value (updates immediately for the input field)
-    debouncedValue,      // Value after debounce delay (good for network requests)
-    deferredValue,       // Value for expensive UI rendering (managed by React)
-    isStale,             // Whether the UI is showing stale results
-    setInputValue,       // Function to set the input value programmatically
-    handleInputChange,   // Event handler for input element
+    // Values
+    inputValue,         // Current input value (updates immediately)
+    debouncedValue,     // Value after debounce delay (good for API calls)
+    deferredValue,      // Value for expensive UI rendering (managed by React)
+    isStale,            // Whether the UI is showing stale results
+    
+    // Functions
+    setInputValue,      // Directly set the input value
+    handleInputChange,  // Event handler for input elements
   };
 }
 

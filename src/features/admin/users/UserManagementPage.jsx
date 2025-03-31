@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { useSearch } from "../../../shared/hooks/useSearch";
 import axiosInstance from "../../../shared/lib/axios";
@@ -12,15 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -29,89 +20,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserCog, AlertTriangle } from "lucide-react";
+import { UserCog, AlertTriangle } from "lucide-react";
 
-// Memoized user table component to prevent unnecessary re-renders
-const UserTable = memo(function UserTable({ users, onOpenConfirmDialog, isStale }) {
-  return (
-    <div
-      style={{
-        opacity: isStale ? 0.7 : 1,
-        transition: isStale ? 'opacity 0.2s 0.2s linear' : 'opacity 0s 0s linear'
-      }}
-    >
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                No users found
-              </TableCell>
-            </TableRow>
-          ) : (
-            users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={user.role === "ADMIN" ? "default" : "outline"}
-                  >
-                    {user.role === "ADMIN" ? "Admin" : "Regular"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {user.created_at 
-                    ? format(new Date(user.created_at), 'MMM d, yyyy') 
-                    : 'N/A'}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={user.active ? "success" : "destructive"}
-                  >
-                    {user.active ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant={user.active ? "destructive" : "default"}
-                    size="sm"
-                    onClick={() => onOpenConfirmDialog(
-                      user,
-                      user.active ? "deactivate" : "activate"
-                    )}
-                    disabled={user.id === 1} // Disable action for default admin account
-                  >
-                    {user.active ? "Deactivate" : "Activate"}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
-});
+// Import our reusable components
+import SearchBar from "../../../shared/components/SearchBar";
+import DataTable from "../../../shared/components/DataTable";
+import EnhancedPagination from "../../../shared/components/EnhancedPagination";
 
 const UserManagementPage = () => {
   const { user } = useAuth();
@@ -131,7 +46,6 @@ const UserManagementPage = () => {
   const { 
     inputValue: searchQuery, 
     debouncedValue: debouncedSearchQuery,
-    deferredValue: deferredSearchQuery,
     isStale,
     handleInputChange 
   } = useSearch("", 300); // 300ms debounce delay
@@ -170,7 +84,7 @@ const UserManagementPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Reset to first page when searching (handled in effect above)
+    // Reset to first page when searching
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -218,83 +132,64 @@ const UserManagementPage = () => {
     }
   };
 
-  // Function to render pagination controls
-  const renderPagination = () => {
-    const { page, totalPages } = pagination;
-
-    return (
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              onClick={() => page > 1 && handlePageChange(page - 1)}
-              disabled={page <= 1}
-            />
-          </PaginationItem>
-
-          {/* Always show first page */}
-          {page > 2 && (
-            <PaginationItem>
-              <PaginationLink onClick={() => handlePageChange(1)}>
-                1
-              </PaginationLink>
-            </PaginationItem>
+  // Define table columns
+  const columns = [
+    {
+      header: "Name",
+      accessor: "name",
+      cell: (user) => <span className="font-medium">{user.name}</span>,
+    },
+    {
+      header: "Email",
+      accessor: "email",
+    },
+    {
+      header: "Role",
+      accessor: "role",
+      cell: (user) => (
+        <Badge variant={user.role === "ADMIN" ? "default" : "outline"}>
+          {user.role === "ADMIN" ? "Admin" : "Regular"}
+        </Badge>
+      ),
+    },
+    {
+      header: "Created",
+      accessor: "created_at",
+      cell: (user) => (
+        user.created_at 
+          ? format(new Date(user.created_at), 'MMM d, yyyy') 
+          : 'N/A'
+      ),
+    },
+    {
+      header: "Status",
+      accessor: "active",
+      cell: (user) => (
+        <Badge variant={user.active ? "success" : "destructive"}>
+          {user.active ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
+    {
+      header: "Actions",
+      accessor: "",
+      className: "text-right",
+      cellClassName: "text-right",
+      cell: (user) => (
+        <Button
+          variant={user.active ? "destructive" : "default"}
+          size="sm"
+          onClick={() => openConfirmDialog(
+            user,
+            user.active ? "deactivate" : "activate"
           )}
-
-          {/* Show ellipsis if needed */}
-          {page > 3 && (
-            <PaginationItem>
-              <PaginationLink disabled>...</PaginationLink>
-            </PaginationItem>
-          )}
-
-          {/* Show current page and adjacent pages */}
-          {page > 1 && (
-            <PaginationItem>
-              <PaginationLink onClick={() => handlePageChange(page - 1)}>
-                {page - 1}
-              </PaginationLink>
-            </PaginationItem>
-          )}
-
-          <PaginationItem>
-            <PaginationLink isActive>{page}</PaginationLink>
-          </PaginationItem>
-
-          {page < totalPages && (
-            <PaginationItem>
-              <PaginationLink onClick={() => handlePageChange(page + 1)}>
-                {page + 1}
-              </PaginationLink>
-            </PaginationItem>
-          )}
-
-          {/* Show ellipsis if needed */}
-          {page < totalPages - 2 && (
-            <PaginationItem>
-              <PaginationLink disabled>...</PaginationLink>
-            </PaginationItem>
-          )}
-
-          {/* Always show last page */}
-          {page < totalPages - 1 && (
-            <PaginationItem>
-              <PaginationLink onClick={() => handlePageChange(totalPages)}>
-                {totalPages}
-              </PaginationLink>
-            </PaginationItem>
-          )}
-
-          <PaginationItem>
-            <PaginationNext
-              onClick={() => page < totalPages && handlePageChange(page + 1)}
-              disabled={page >= totalPages}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-    );
-  };
+          disabled={user.id === 1} // Disable action for default admin account
+        >
+          {user.active ? "Deactivate" : "Activate"}
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -310,48 +205,34 @@ const UserManagementPage = () => {
         </CardHeader>
         <CardContent>
           {/* Search bar */}
-          <form onSubmit={handleSearch} className="flex mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search by name or email..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={handleInputChange}
-              />
-            </div>
-            <Button type="submit" className="ml-2">
-              Search
-            </Button>
-          </form>
+          <SearchBar
+            value={searchQuery}
+            onChange={handleInputChange}
+            onSubmit={handleSearch}
+            placeholder="Search by name or email..."
+            className="mb-4"
+          />
 
           {/* Users table */}
-          {loading && !isStale ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <UserTable 
-                users={users} 
-                onOpenConfirmDialog={openConfirmDialog}
-                isStale={isStale}
-              />
-              
-              {/* Show loading indicator below the table when updating stale content */}
-              {isStale && loading && (
-                <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  <span>Updating results...</span>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="overflow-x-auto">
+            <DataTable
+              columns={columns}
+              data={users}
+              loading={loading}
+              isStale={isStale}
+              emptyMessage="No users found"
+            />
+          </div>
 
           {/* Pagination */}
           {!loading && users.length > 0 && pagination.totalPages > 1 && (
-            <div className="mt-4 flex justify-center">{renderPagination()}</div>
+            <div className="mt-4 flex justify-center">
+              <EnhancedPagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           )}
         </CardContent>
       </Card>
