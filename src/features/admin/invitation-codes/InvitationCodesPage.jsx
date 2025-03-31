@@ -22,9 +22,7 @@ import {
   RefreshCw, 
   Clock, 
   CheckCircle2, 
-  XCircle,
-  Link as LinkIcon,
-  LinkCheck,
+  XCircle
 } from "lucide-react";
 
 // Import our AdminDataPanel component
@@ -38,7 +36,7 @@ const InvitationCodesPage = () => {
   const [notes, setNotes] = useState("");
   const [generatingCode, setGeneratingCode] = useState(false);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
-  const [copiedLinkId, setCopiedLinkId] = useState(null);
+
   const [refreshing, setRefreshing] = useState(false);
 
   // Use our custom search hook for optimized search
@@ -136,25 +134,7 @@ const InvitationCodesPage = () => {
       });
   };
 
-  const copyRegistrationLink = (code, id) => {
-    // Create registration link with invitation code
-    const baseUrl = window.location.origin;
-    const registrationUrl = `${baseUrl}/register?code=${code}`;
-    
-    navigator.clipboard.writeText(registrationUrl)
-      .then(() => {
-        setCopiedLinkId(id);
-        toast.success("Registration link copied to clipboard");
-        
-        // Reset copied state after 3 seconds
-        setTimeout(() => {
-          setCopiedLinkId(null);
-        }, 3000);
-      })
-      .catch(() => {
-        toast.error("Failed to copy registration link");
-      });
-  };
+
 
   // Helper function to check if code is expired
   const isCodeExpired = (expiresAt) => {
@@ -268,20 +248,7 @@ const InvitationCodesPage = () => {
               )}
             </Button>
             
-            {/* Copy Registration Link button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => copyRegistrationLink(code.code, code.id)}
-              disabled={used || expired}
-              title="Copy Registration Link"
-            >
-              {copiedLinkId === code.id ? (
-                <LinkCheck className="h-4 w-4" />
-              ) : (
-                <LinkIcon className="h-4 w-4" />
-              )}
-            </Button>
+
           </div>
         );
       },
