@@ -4,13 +4,6 @@ import { useSearch } from "../../../shared/hooks/useSearch";
 import axiosInstance from "../../../shared/lib/axios";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,9 +27,8 @@ import {
   LinkCheck,
 } from "lucide-react";
 
-// Import our reusable components
-import SearchBar from "../../../shared/components/SearchBar";
-import DataTable from "../../../shared/components/DataTable";
+// Import our AdminDataPanel component
+import AdminDataPanel from "../../../shared/components/AdminDataPanel";
 
 const InvitationCodesPage = () => {
   const { user } = useAuth();
@@ -180,6 +172,17 @@ const InvitationCodesPage = () => {
     return format(new Date(date), "MMM d, yyyy");
   };
 
+  // Action button for the panel header
+  const generateButton = (
+    <Button 
+      size="sm"
+      onClick={() => setGenerateDialogOpen(true)}
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      Generate New Code
+    </Button>
+  );
+
   // Define table columns
   const columns = [
     {
@@ -289,58 +292,22 @@ const InvitationCodesPage = () => {
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Invitation Codes</h1>
       
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-xl">Invitation Codes</CardTitle>
-              <CardDescription>
-                Generate and manage invitation codes for new user registrations.
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={refreshInvitationCodes}
-                disabled={refreshing}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => setGenerateDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Generate New Code
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search input */}
-          <SearchBar
-            value={searchQuery}
-            onChange={handleInputChange}
-            showButton={false}
-            placeholder="Search codes or notes..."
-            className="mb-4"
-          />
-
-          {/* Invitation Codes Table */}
-          <div className="overflow-x-auto">
-            <DataTable
-              columns={columns}
-              data={filteredCodes}
-              loading={loading}
-              isStale={isStale}
-              emptyMessage="No invitation codes found. Generate a new code to get started."
-              staleMessage="spinner"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Using our new AdminDataPanel component */}
+      <AdminDataPanel
+        title="Invitation Codes"
+        description="Generate and manage invitation codes for new user registrations."
+        columns={columns}
+        data={filteredCodes}
+        loading={loading}
+        isStale={isStale}
+        searchValue={searchQuery}
+        onSearchChange={handleInputChange}
+        onRefresh={refreshInvitationCodes}
+        refreshing={refreshing}
+        searchPlaceholder="Search codes or notes..."
+        emptyMessage="No invitation codes found. Generate a new code to get started."
+        actions={generateButton}
+      />
 
       {/* Generate Code Dialog */}
       <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>

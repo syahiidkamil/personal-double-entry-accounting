@@ -4,13 +4,6 @@ import { useSearch } from "../../../shared/hooks/useSearch";
 import axiosInstance from "../../../shared/lib/axios";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,10 +16,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { UserCog, AlertTriangle } from "lucide-react";
 
-// Import our reusable components
-import SearchBar from "../../../shared/components/SearchBar";
-import DataTable from "../../../shared/components/DataTable";
-import EnhancedPagination from "../../../shared/components/EnhancedPagination";
+// Import our AdminDataPanel component
+import AdminDataPanel from "../../../shared/components/AdminDataPanel";
 
 const UserManagementPage = () => {
   const { user } = useAuth();
@@ -41,6 +32,7 @@ const UserManagementPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [actionType, setActionType] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use our custom search hook for optimized search
   const { 
@@ -82,10 +74,12 @@ const UserManagementPage = () => {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Reset to first page when searching
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Reset to first page when refreshing explicitly
     setPagination((prev) => ({ ...prev, page: 1 }));
+    await fetchUsers();
+    setRefreshing(false);
   };
 
   const handlePageChange = (newPage) => {
@@ -195,47 +189,26 @@ const UserManagementPage = () => {
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-4">User Management</h1>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-xl">Users</CardTitle>
-          <CardDescription>
-            Manage all users in the system. You can activate or deactivate
-            accounts as needed.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Search bar */}
-          <SearchBar
-            value={searchQuery}
-            onChange={handleInputChange}
-            onSubmit={handleSearch}
-            placeholder="Search by name or email..."
-            className="mb-4"
-          />
-
-          {/* Users table */}
-          <div className="overflow-x-auto">
-            <DataTable
-              columns={columns}
-              data={users}
-              loading={loading}
-              isStale={isStale}
-              emptyMessage="No users found"
-            />
-          </div>
-
-          {/* Pagination */}
-          {!loading && users.length > 0 && pagination.totalPages > 1 && (
-            <div className="mt-4 flex justify-center">
-              <EnhancedPagination
-                currentPage={pagination.page}
-                totalPages={pagination.totalPages}
-                onPageChange={handlePageChange}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Using our new AdminDataPanel component */}
+      <AdminDataPanel
+        title="Users"
+        description="Manage all users in the system. You can activate or deactivate accounts as needed."
+        columns={columns}
+        data={users}
+        loading={loading}
+        isStale={isStale}
+        searchValue={searchQuery}
+        onSearchChange={handleInputChange}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+        searchPlaceholder="Search by name or email..."
+        emptyMessage="No users found"
+        pagination={{
+          currentPage: pagination.page,
+          totalPages: pagination.totalPages,
+          onPageChange: handlePageChange,
+        }}
+      />
 
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
