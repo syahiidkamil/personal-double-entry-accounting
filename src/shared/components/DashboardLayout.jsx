@@ -20,6 +20,7 @@ import {
   Users,
   Ticket,
   Settings,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppLogo } from "@/components/ui/app-logo";
@@ -267,10 +268,25 @@ const DashboardLayout = () => {
                     )}
                   </div>
                   <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate("/profile");
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm hover:bg-accent"
+                  >
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      <span>Profile</span>
+                    </div>
+                  </button>
+                  <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-accent"
                   >
-                    Sign out
+                    <div className="flex items-center">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      <span>Sign out</span>
+                    </div>
                   </button>
                 </div>
               )}
@@ -412,6 +428,16 @@ const DashboardLayout = () => {
 
             {/* Mobile sign out button */}
             <div className="p-4 border-t border-border">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/profile");
+                }}
+                className="flex items-center w-full justify-start py-2 px-4 text-sm font-medium mb-2"
+              >
+                <User className="flex-shrink-0 h-4 w-4 mr-3" />
+                <span>Profile</span>
+              </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center w-full justify-start text-destructive py-2 px-4 text-sm font-medium"

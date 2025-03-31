@@ -11,6 +11,7 @@ import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 import NotFoundPage from "./features/not-found/NotFoundPage";
 import DashboardHomePage from "./features/dashboard-home/DashboardHomePage";
+import ProfilePage from "./features/profile/ProfilePage";
 
 // Import admin pages
 import UserManagementPage from "./features/admin/users/UserManagementPage";
@@ -44,6 +45,10 @@ const routesConfig = [
       {
         path: "dashboard",
         element: <DashboardHomePage />,
+      },
+      {
+        path: "profile",
+        element: <ProfilePage />,
       },
       {
         path: "accounts",
