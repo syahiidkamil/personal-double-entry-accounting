@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { SonnerProvider } from "./shared/components/ui/sonner-provider";
 import ProtectedRoute from "./shared/routes/ProtectedRoute";
 import PublicRoute from "./shared/routes/PublicRoute";
+import AdminRoute from "./shared/routes/AdminRoute";
 import DashboardLayout from "./shared/components/DashboardLayout";
 import { AuthProvider } from "./features/auth/contexts/AuthProvider";
 
@@ -10,6 +11,10 @@ import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 import NotFoundPage from "./features/not-found/NotFoundPage";
 import DashboardHomePage from "./features/dashboard-home/DashboardHomePage";
+
+// Import admin pages
+import UserManagementPage from "./features/admin/users/UserManagementPage";
+import InvitationCodesPage from "./features/admin/invitation-codes/InvitationCodesPage";
 
 // Dummy Components for missing pages
 const AccountsPage = () => <div>Accounts Page</div>;
@@ -75,6 +80,23 @@ const routesConfig = [
       {
         path: "reports/net-worth",
         element: <NetWorthPage />,
+      },
+      // Admin Routes (protected by AdminRoute)
+      {
+        path: "admin/users",
+        element: (
+          <AdminRoute>
+            <UserManagementPage />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "admin/invitation-codes",
+        element: (
+          <AdminRoute>
+            <InvitationCodesPage />
+          </AdminRoute>
+        ),
       },
     ],
   },

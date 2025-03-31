@@ -17,6 +17,9 @@ import {
   PieChart,
   BarChart4,
   DollarSign,
+  Users,
+  Ticket,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppLogo } from "@/components/ui/app-logo";
@@ -31,13 +34,19 @@ const DashboardLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reportsExpanded, setReportsExpanded] = useState(false);
+  const [adminExpanded, setAdminExpanded] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
-  // Auto-expand Reports section if current path is a report
+  const isAdmin = user?.role === "ADMIN";
+
+  // Auto-expand sections if current path is related
   useEffect(() => {
     if (location.pathname.startsWith("/reports")) {
       setReportsExpanded(true);
+    }
+    if (location.pathname.startsWith("/admin")) {
+      setAdminExpanded(true);
     }
   }, [location.pathname]);
 
@@ -87,6 +96,29 @@ const DashboardLayout = () => {
       ],
     },
   ];
+
+  // Admin navigation items - only visible to admins
+  const adminItems = isAdmin
+    ? [
+        {
+          name: "Admin",
+          icon: Settings,
+          href: null, // No direct link for admin
+          submenu: [
+            {
+              name: "User Management",
+              icon: Users,
+              href: "/admin/users",
+            },
+            {
+              name: "Invitation Codes",
+              icon: Ticket,
+              href: "/admin/invitation-codes",
+            },
+          ],
+        },
+      ]
+    : [];
 
   // Initialize sidebar state based on screen size
   useEffect(() => {
@@ -148,15 +180,26 @@ const DashboardLayout = () => {
     navigate("/login", { replace: true });
   };
 
-  // Toggle reports submenu
+  // Toggle submenu for sections
   const toggleReportsMenu = () => {
     setReportsExpanded(!reportsExpanded);
   };
 
-  // Determine if a reports submenu item is active
+  const toggleAdminMenu = () => {
+    setAdminExpanded(!adminExpanded);
+  };
+
+  // Determine if a submenu item is active
   const isReportActive = () => {
     return location.pathname.startsWith("/reports");
   };
+
+  const isAdminActive = () => {
+    return location.pathname.startsWith("/admin");
+  };
+
+  // Combine navigation items
+  const allNavigationItems = [...navigationItems, ...adminItems];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -217,6 +260,11 @@ const DashboardLayout = () => {
                     <p className="text-xs text-muted-foreground">
                       {user?.email || "admin@example.com"}
                     </p>
+                    {isAdmin && (
+                      <p className="text-xs mt-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm inline-block">
+                        Admin
+                      </p>
+                    )}
                   </div>
                   <button
                     onClick={handleLogout}
@@ -266,7 +314,7 @@ const DashboardLayout = () => {
             {/* Mobile navigation */}
             <nav className="flex-1 overflow-y-auto py-2">
               <ul>
-                {navigationItems.map((item) => (
+                {allNavigationItems.map((item) => (
                   <React.Fragment key={item.name}>
                     {item.href ? (
                       <li>
@@ -298,10 +346,14 @@ const DashboardLayout = () => {
                       </li>
                     ) : (
                       <>
-                        {/* Reports category header in mobile view */}
+                        {/* Category header in mobile view */}
                         <li>
                           <button
-                            onClick={toggleReportsMenu}
+                            onClick={
+                              item.name === "Reports"
+                                ? toggleReportsMenu
+                                : toggleAdminMenu
+                            }
                             className="flex items-center w-full py-3 px-4 text-base font-medium text-foreground hover:bg-muted"
                           >
                             <item.icon className="flex-shrink-0 h-5 w-5 mr-3 text-muted-foreground" />
@@ -309,14 +361,18 @@ const DashboardLayout = () => {
                             <ChevronDown
                               className={cn(
                                 "ml-auto h-4 w-4 text-muted-foreground transition-transform",
-                                reportsExpanded && "rotate-180"
+                                (item.name === "Reports" && reportsExpanded) ||
+                                  (item.name === "Admin" && adminExpanded)
+                                  ? "rotate-180"
+                                  : ""
                               )}
                             />
                           </button>
                         </li>
 
-                        {/* Reports submenu items in mobile view */}
-                        {reportsExpanded &&
+                        {/* Submenu items in mobile view */}
+                        {((item.name === "Reports" && reportsExpanded) ||
+                          (item.name === "Admin" && adminExpanded)) &&
                           item.submenu.map((subitem) => (
                             <li key={subitem.name}>
                               <NavLink
@@ -397,7 +453,7 @@ const DashboardLayout = () => {
           <div className="h-full flex flex-col overflow-y-auto">
             <nav className="flex-1">
               <ul className="space-y-2 p-2">
-                {navigationItems.map((item) => (
+                {allNavigationItems.map((item) => (
                   <li key={item.name} className="relative">
                     {/* Regular menu items */}
                     {item.href ? (
@@ -417,29 +473,36 @@ const DashboardLayout = () => {
                         )}
                       </NavLink>
                     ) : (
-                      /* Reports menu with submenu */
+                      /* Menu with submenu */
                       <>
-                        {/* Reports header - showing differently based on collapsed state */}
+                        {/* Section header - showing differently based on collapsed state */}
                         {!sidebarCollapsed ? (
                           // Expanded mode - show as button with chevron
                           <button
                             className={cn(
                               "w-full flex items-center py-3 rounded-md text-base font-medium",
-                              isReportActive()
+                              (item.name === "Reports" && isReportActive()) ||
+                                (item.name === "Admin" && isAdminActive())
                                 ? "bg-accent text-accent-foreground"
                                 : "text-foreground hover:bg-muted",
                               "px-3"
                             )}
-                            onClick={toggleReportsMenu}
+                            onClick={
+                              item.name === "Reports"
+                                ? toggleReportsMenu
+                                : toggleAdminMenu
+                            }
                           >
-                            {isReportActive() && (
+                            {((item.name === "Reports" && isReportActive()) ||
+                              (item.name === "Admin" && isAdminActive())) && (
                               <div className="absolute left-0 inset-y-0 w-2 bg-primary rounded-r-full"></div>
                             )}
 
                             <item.icon
                               className={cn(
                                 "flex-shrink-0 h-5 w-5",
-                                isReportActive()
+                                (item.name === "Reports" && isReportActive()) ||
+                                  (item.name === "Admin" && isAdminActive())
                                   ? "text-primary"
                                   : "text-muted-foreground"
                               )}
@@ -448,7 +511,10 @@ const DashboardLayout = () => {
                             <ChevronDown
                               className={cn(
                                 "ml-auto h-4 w-4 text-muted-foreground transition-transform",
-                                reportsExpanded && "rotate-180"
+                                (item.name === "Reports" && reportsExpanded) ||
+                                  (item.name === "Admin" && adminExpanded)
+                                  ? "rotate-180"
+                                  : ""
                               )}
                             />
                           </button>
@@ -457,44 +523,46 @@ const DashboardLayout = () => {
                           <Separator className="my-2 mx-auto w-6" />
                         )}
 
-                        {/* Expanded submenu for report items */}
-                        {!sidebarCollapsed && reportsExpanded && (
-                          <ul className="mt-2 ml-5 pl-4 space-y-2">
-                            {item.submenu.map((subitem) => (
-                              <li key={subitem.name}>
-                                <NavLink
-                                  to={subitem.href}
-                                  className={({ isActive }) =>
-                                    cn(
-                                      "flex items-center py-2.5 rounded-md text-base font-medium px-3",
-                                      isActive
-                                        ? "bg-accent text-accent-foreground font-bold"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                    )
-                                  }
-                                >
-                                  {({ isActive }) => (
-                                    <>
-                                      <subitem.icon
-                                        className={cn(
-                                          "flex-shrink-0 h-5 w-5",
-                                          isActive
-                                            ? "text-primary"
-                                            : "text-muted-foreground"
-                                        )}
-                                      />
-                                      <span className="ml-2">
-                                        {subitem.name}
-                                      </span>
-                                    </>
-                                  )}
-                                </NavLink>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                        {/* Expanded submenu for items */}
+                        {!sidebarCollapsed &&
+                          ((item.name === "Reports" && reportsExpanded) ||
+                            (item.name === "Admin" && adminExpanded)) && (
+                            <ul className="mt-2 ml-5 pl-4 space-y-2">
+                              {item.submenu.map((subitem) => (
+                                <li key={subitem.name}>
+                                  <NavLink
+                                    to={subitem.href}
+                                    className={({ isActive }) =>
+                                      cn(
+                                        "flex items-center py-2.5 rounded-md text-base font-medium px-3",
+                                        isActive
+                                          ? "bg-accent text-accent-foreground font-bold"
+                                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                      )
+                                    }
+                                  >
+                                    {({ isActive }) => (
+                                      <>
+                                        <subitem.icon
+                                          className={cn(
+                                            "flex-shrink-0 h-5 w-5",
+                                            isActive
+                                              ? "text-primary"
+                                              : "text-muted-foreground"
+                                          )}
+                                        />
+                                        <span className="ml-2">
+                                          {subitem.name}
+                                        </span>
+                                      </>
+                                    )}
+                                  </NavLink>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
 
-                        {/* In collapsed mode, show report submenu directly */}
+                        {/* In collapsed mode, show submenu directly */}
                         {sidebarCollapsed && (
                           <div className="mt-1 space-y-1">
                             {item.submenu.map((subitem) => (
@@ -532,7 +600,7 @@ const DashboardLayout = () => {
               </ul>
             </nav>
 
-            {/* Bottom section with sign out button - matching screenshot exactly */}
+            {/* Bottom section with sign out button */}
             <div className="mt-auto flex border-t border-border">
               <button
                 onClick={handleLogout}

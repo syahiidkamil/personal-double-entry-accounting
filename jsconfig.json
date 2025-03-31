@@ -2,9 +2,9 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/shared/*"],
-      "@/lib/*": ["./src/lib/*"],
+      "@/lib/*": ["./src/shared/lib/*"],
       "@/features/*": ["./src/features/*"],
-      "@/components/*": ["./src/components/*"],
+      "@/components/*": ["./src/shared/components/*"],
       "@/styles/*": ["./src/styles/*"],
       "@/api/*": ["./src/pages/api/*"]
     },

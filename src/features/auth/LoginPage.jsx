@@ -7,9 +7,9 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from "../../shared/components/ui/card";
+import { Button } from "../../shared/components/ui/button";
+import { Input } from "../../shared/components/ui/input";
 import PasswordInput from "../../shared/components/PasswordInput";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -22,7 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "../../shared/components/ui/form";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
