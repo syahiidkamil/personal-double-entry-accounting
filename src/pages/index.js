@@ -1,23 +1,20 @@
-import MainLayout from "@/components/layouts/MainLayout";
-import ProductList from "@/features/products/components/ProductList";
+import dynamic from 'next/dynamic';
+import Head from 'next/head';
+
+// Import App dynamically to avoid SSR issues with React Router
+const ClientApp = dynamic(() => import('../App'), {
+  ssr: false,
+});
 
 export default function Home() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Our Store</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Browse our collection of high-quality products. Sign in to access exclusive features!
-        </p>
-      </div>
-      
-      <div className="my-8">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Our Products</h2>
-        <ProductList />
-      </div>
-    </div>
+    <>
+      <Head>
+        <title>Personal Double-Entry Accounting</title>
+        <meta name="description" content="Personal double-entry accounting system" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      <ClientApp />
+    </>
   );
 }
-
-// Define the layout for this page
-Home.getLayout = (page) => <MainLayout>{page}</MainLayout>;

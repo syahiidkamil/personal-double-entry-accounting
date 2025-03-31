@@ -1,9 +1,13 @@
-import "@/styles/globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
+import '../styles/globals.css';
+import dynamic from 'next/dynamic';
 
-export default function App({ Component, pageProps }) {
+// Create a NextJS app component that properly renders both API routes 
+// and our single-page client app
+function MyApp({ Component, pageProps }) {
   // Use the layout defined at the page level, if available
   const getLayout = Component.getLayout || ((page) => page);
-
-  return <AuthProvider>{getLayout(<Component {...pageProps} />)}</AuthProvider>;
+  
+  return getLayout(<Component {...pageProps} />);
 }
+
+export default MyApp;

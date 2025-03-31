@@ -1,3 +1,127 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Main background and text colors */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    /* Card elements */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    /* Popover elements */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary color - financial blue */
+    --primary: 210 100% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary color - subtle gray */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted elements */
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent color - lighter blue for hover states */
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11%;
+
+    /* Status colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Destructive - for errors, deletes, etc. */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Warning - for cautions */
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    /* Border and form elements */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 210 100% 35%;
+
+    /* Border radius */
+    --radius: 0.5rem;
+
+    /* Financial chart colors */
+    --chart-1: 210 100% 55%; /* Blue - assets */
+    --chart-2: 338 84% 56%; /* Red - liabilities */
+    --chart-3: 142 71% 45%; /* Green - income */
+    --chart-4: 38 92% 50%; /* Yellow - expenses */
+    --chart-5: 262 83% 58%; /* Purple - equity */
+    --chart-6: 187 100% 42%; /* Teal - savings */
+  }
+
+  .dark {
+    /* Main background and text colors */
+    --background: 222 47% 11%;
+    --foreground: 210 20% 98%;
+
+    /* Card elements */
+    --card: 222 47% 9%;
+    --card-foreground: 210 20% 98%;
+
+    /* Popover elements */
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 20% 98%;
+
+    /* Primary color - financial blue */
+    --primary: 210 100% 50%;
+    --primary-foreground: 222 47% 11%;
+
+    /* Secondary color */
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 20% 98%;
+
+    /* Muted elements */
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent color */
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 20% 98%;
+
+    /* Status colors */
+    --success: 142 71% 45%;
+    --success-foreground: 222 47% 11%;
+
+    /* Destructive - for errors, deletes, etc. */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Warning - for cautions */
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    /* Border and form elements */
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 210 100% 50%;
+
+    /* Financial chart colors - brighter in dark mode */
+    --chart-1: 210 100% 60%; /* Blue - assets */
+    --chart-2: 338 84% 66%; /* Red - liabilities */
+    --chart-3: 142 71% 45%; /* Green - income */
+    --chart-4: 38 92% 60%; /* Yellow - expenses */
+    --chart-5: 262 83% 68%; /* Purple - equity */
+    --chart-6: 187 100% 52%; /* Teal - savings */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
