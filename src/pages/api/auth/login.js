@@ -1,9 +1,14 @@
-import { readDB, createToken, sanitizeUser } from '../../../lib/db';
+import prisma from '../utils/db/prisma';
+import { comparePassword } from '../utils/auth/password';
+import { generateToken } from '../utils/auth/jwt';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   // Only allow POST method
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false, 
+      message: 'Method not allowed' 
+    });
   }
 
   try {
@@ -11,34 +16,63 @@ export default function handler(req, res) {
 
     // Basic validation
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and password are required' 
+      });
     }
 
-    // Read database
-    const db = readDB();
-    
-    // Find user
-    const user = db.users.find(
-      (user) => user.email.toLowerCase() === email.toLowerCase()
-    );
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
 
-    // Check if user exists and password matches
-    if (!user || user.password !== password) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    // Check if user exists
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid email or password' 
+      });
     }
 
-    // Create token and sanitize user object
-    const token = createToken(user);
-    const sanitizedUser = sanitizeUser(user);
+    // Check if user is active
+    if (!user.active) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Account is deactivated. Please contact an administrator.' 
+      });
+    }
 
-    // Return user data and token
-    res.status(200).json({
-      user: sanitizedUser,
-      token,
+    // Verify password
+    const isValidPassword = await comparePassword(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid email or password' 
+      });
+    }
+
+    // Generate JWT token
+    const token = generateToken(user);
+
+    // Return sanitized user data and token
+    return res.status(200).json({
+      success: true,
       message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        preferences: user.preferences
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
   }
 }

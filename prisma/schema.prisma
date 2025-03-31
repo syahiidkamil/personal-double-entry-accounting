@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  password_hash     String
+  role              String    @default("REGULAR")
+  active            Boolean   @default(true)
+  preferences       Json      @default("{\"mainCurrency\": \"IDR\", \"currencies\": [\"IDR\"]}")
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now()) @updatedAt
+
+  // Relations
+  invitations_created InvitationCode[] @relation("CreatedBy")
+  invitations_used    InvitationCode?  @relation("UsedBy")
+  
+  @@map("users")
+}
+
+model InvitationCode {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  notes        String?
+  created_by   String
+  creator      User      @relation("CreatedBy", fields: [created_by], references: [id])
+  created_at   DateTime  @default(now())
+  expires_at   DateTime
+  used_by      String?   @unique
+  user         User?     @relation("UsedBy", fields: [used_by], references: [id])
+  used_at      DateTime?
+
+  @@map("invitation_codes")
+}

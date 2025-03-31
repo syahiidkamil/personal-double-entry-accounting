@@ -1,77 +1,111 @@
-# Next.js CSR Authentication Template
+# Personal Double-Entry Accounting System
 
-A comprehensive template for building client-side rendered (CSR) Next.js applications with authentication, protected routes, and a simple API.
+A comprehensive double-entry accounting system for personal finance management. Manage accounts, track transactions, monitor debts, and analyze financial health.
 
 ## Features
 
-- **Complete Authentication System**
-  - Login and Registration
-  - Protected Routes
-  - Role-Based Access Control (Admin vs Regular Users)
-
-- **API Integration**
-  - Auth API (Login, Register)
-  - Products API (CRUD operations)
-  - Admin Dashboard
-
-- **Modular Architecture**
-  - Feature-based organization
-  - Clean separation of concerns
-  - Reusable components and hooks
-
-- **Client-Side Rendering**
-  - Tailwind CSS for styling
-  - Responsive design
-  - Optimized for performance
-
-## Project Structure
-
-The project follows a feature-based structure:
-
-```
-src/
-├── components/        # Shared UI components
-├── context/           # Global context providers
-├── features/          # Feature modules
-│   ├── auth/          # Authentication feature
-│   ├── products/      # Products feature
-│   └── admin/         # Admin dashboard feature
-├── lib/               # Utility libraries
-├── pages/             # Next.js pages and API routes
-└── utils/             # Utility functions
-```
+- **Double-Entry Accounting**: Ensure balance and accuracy with double-entry transactions
+- **Multi-Currency Support**: Handle multiple currencies with appropriate conversions
+- **Debt Tracking**: Monitor loans, credit cards, and other liabilities
+- **Financial Reporting**: Generate balance sheets, income statements, and more
+- **User Authentication**: Secure login system with JWT tokens
 
 ## Getting Started
 
-1. Clone this repository
-2. Install dependencies: `npm install`
-3. Run the development server: `npm run dev`
-4. Open [http://localhost:3000](http://localhost:3000)
+### Prerequisites
 
-## Authentication
+- Node.js (v18+)
+- PostgreSQL database
 
-The template uses a simple token-based authentication system with localStorage for persistence. In a production environment, you should implement proper JWT handling, HTTP-only cookies, and more secure authentication practices.
+### Environment Setup
 
-### Default Admin Account
+1. Clone the repository
+2. Copy `.env.example` to `.env.local` and update the values:
 
-- Email: admin@example.com
-- Password: adminpassword
+```
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/personal_accounting?schema=public"
 
-## API Routes
+# Authentication
+JWT_SECRET="your-secret-key-change-this-in-production"
+JWT_EXPIRY="7d"
 
-- `/api/auth/login`: POST - Authenticate user
-- `/api/auth/register`: POST - Register new user
-- `/api/products`: GET (public), POST (admin)
-- `/api/products/[id]`: GET (public), PUT/DELETE (admin)
+# Admin Registration 
+ADMIN_REGISTRATION_KEY="your-admin-secret-key-change-this-in-production"
+```
 
-## Customization
+### Installation
 
-This template is designed to be a starting point. You can:
+```bash
+# Install dependencies
+npm install
 
-- Replace the simple JSON database with MongoDB, PostgreSQL, etc.
-- Enhance security with proper JWT implementation
-- Add more features or expand existing ones
-- Customize the UI to match your brand
+# Initialize the database
+npm run db:push
+
+# Seed the database with initial data
+npm run db:seed
+
+# Start the development server
+npm run dev
+```
+
+### Default Users
+
+The seed script creates two default users:
+
+1. **Admin User**
+   - Email: admin@example.com
+   - Password: adminpassword
+   - Role: ADMIN
+
+2. **Regular User**
+   - Email: user@example.com
+   - Password: userpassword
+   - Role: REGULAR
+
+## Development
+
+### Project Structure
+
+```
+/
+├── prisma/            # Database schema and migrations
+├── public/            # Static assets
+└── src/
+    ├── components/    # Reusable UI components
+    ├── features/      # Feature-based modules
+    │   ├── auth/      # Authentication
+    │   ├── accounts/  # Account management
+    │   └── ...        # Other features
+    ├── lib/           # Utility libraries
+    ├── middleware/    # API middleware
+    ├── pages/         # Page components and API routes
+    └── styles/        # Global styles
+```
+
+### Authentication System
+
+The authentication system uses JWT tokens with secure HTTP-only cookies:
+
+- **Registration**: Users register with an invitation code (admin can generate these)
+- **Login**: Email/password authentication with JWT token generation
+- **Auth Context**: React context provides authentication state to components
+- **Protected Routes**: Routes that require authentication
+- **Admin Routes**: Routes that require admin privileges
+
+### Database Schema
+
+The system uses Prisma ORM with PostgreSQL. Key tables include:
+
+- `users`: User accounts and preferences
+- `invitation_codes`: One-time codes for registration
+- `account_categories`: Categories for organizing accounts
+- `accounts`: Financial accounts (bank accounts, credit cards, etc.)
+- `transactions`: Financial transactions
+- `transaction_entries`: Individual debit/credit entries for transactions
+- `debts`: Debt tracking entities
+- `debt_payments`: Payments made toward debts
 
 ## License
 

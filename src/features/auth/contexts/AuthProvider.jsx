@@ -11,7 +11,18 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const isAuthenticated = authService.isAuthenticated();
       if (isAuthenticated) {
+        // Get user from localStorage first for instant UI update
         setUser(authService.getCurrentUser());
+        
+        // Then fetch fresh data from the server
+        try {
+          const { success, user: freshUser } = await authService.fetchProfile();
+          if (success && freshUser) {
+            setUser(freshUser);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+        }
       }
       setLoading(false);
     };
@@ -33,14 +44,19 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     console.log("AuthProvider register called with:", userData);
-    const result = await authService.register(
-      userData.name,
-      userData.email,
-      userData.password
-    );
+    const result = await authService.register(userData);
     console.log("Register result:", result);
     if (result.success) {
       setUser(result.user);
+      return true;
+    }
+    return false;
+  };
+
+  const updateProfile = async (userData) => {
+    const result = await authService.updateProfile(userData);
+    if (result.success) {
+      setUser(prev => ({ ...prev, ...result.user }));
       return true;
     }
     return false;
@@ -60,6 +76,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateProfile,
     isAuthenticated: !!user,
   };
 

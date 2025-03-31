@@ -2,7 +2,7 @@ import axiosInstance from "../../../shared/lib/axios";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 
-export const authService = {
+const authService = {
   login: async (email, password) => {
     try {
       const response = await axiosInstance.post("/api/auth/login", {
@@ -10,30 +10,36 @@ export const authService = {
         password,
       });
 
-      const { token, user } = response.data;
+      const { token, user, success, message } = response.data;
+
+      if (!success) {
+        toast.error(message || "Login failed");
+        return { success: false, message };
+      }
 
       // Store token and user info in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      toast.success("Successfully logged in!");
+      toast.success(message || "Successfully logged in!");
       return { success: true, user };
     } catch (error) {
-      const message = error.response?.data?.error || "Login failed";
+      const message = error.response?.data?.message || "Login failed";
       toast.error(message);
       return { success: false, message };
     }
   },
 
-  register: async (name, email, password) => {
+  register: async (userData) => {
     try {
-      const response = await axiosInstance.post("/api/auth/register", {
-        name,
-        email,
-        password,
-      });
+      const response = await axiosInstance.post("/api/auth/register", userData);
 
-      const { token, user, message } = response.data;
+      const { token, user, success, message } = response.data;
+
+      if (!success) {
+        toast.error(message || "Registration failed");
+        return { success: false, message };
+      }
 
       // Store token and user info in localStorage
       localStorage.setItem("token", token);
@@ -42,7 +48,7 @@ export const authService = {
       toast.success(message || "Account created successfully!");
       return { success: true, user };
     } catch (error) {
-      const message = error.response?.data?.error || "Registration failed";
+      const message = error.response?.data?.message || "Registration failed";
       toast.error(message);
       return { success: false, message };
     }
@@ -104,6 +110,50 @@ export const authService = {
     }
     return localStorage.getItem("token");
   },
+  
+  updateProfile: async (userData) => {
+    try {
+      const response = await axiosInstance.patch("/api/auth/me", userData);
+      
+      const { user, success, message } = response.data;
+      
+      if (!success) {
+        toast.error(message || "Failed to update profile");
+        return { success: false, message };
+      }
+      
+      // Update stored user info in localStorage
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...currentUser, ...user }));
+      
+      toast.success(message || "Profile updated successfully!");
+      return { success: true, user };
+    } catch (error) {
+      const message = error.response?.data?.message || "Failed to update profile";
+      toast.error(message);
+      return { success: false, message };
+    }
+  },
+  
+  fetchProfile: async () => {
+    try {
+      const response = await axiosInstance.get("/api/auth/me");
+      
+      const { user, success } = response.data;
+      
+      if (!success) {
+        return { success: false, user: null };
+      }
+      
+      // Update stored user info in localStorage
+      localStorage.setItem("user", JSON.stringify(user));
+      
+      return { success: true, user };
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      return { success: false, user: null };
+    }
+  }
 };
 
 export default authService;

@@ -12,7 +12,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, email, password, invitationCode } = req.body;
+    // Verify admin key from request header
+    const adminKey = req.headers['x-admin-key'];
+    const expectedAdminKey = process.env.ADMIN_REGISTRATION_KEY;
+
+    if (!adminKey || adminKey !== expectedAdminKey) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Invalid admin key' 
+      });
+    }
+
+    const { name, email, password } = req.body;
 
     // Basic validation
     if (!name || !email || !password) {
@@ -34,45 +45,41 @@ export default async function handler(req, res) {
       });
     }
 
-    // For now, bypass invitation code validation for development
-    // TODO: Implement invitation code validation in production
-    // This will be implemented in ticket AUTH-3
-
     // Hash password
     const password_hash = await hashPassword(password);
 
-    // Create new user
-    const newUser = await prisma.user.create({
+    // Create new admin user
+    const newAdmin = await prisma.user.create({
       data: {
         name,
         email,
         password_hash,
-        role: 'REGULAR',
+        role: 'ADMIN',
         preferences: {
           mainCurrency: 'IDR',
-          currencies: ['IDR']
+          currencies: ['IDR', 'USD']
         }
       }
     });
 
     // Create token
-    const token = generateToken(newUser);
+    const token = generateToken(newAdmin);
 
     // Return sanitized user data and token
     return res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Admin user registered successfully',
       token,
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        preferences: newUser.preferences
+        id: newAdmin.id,
+        name: newAdmin.name,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        preferences: newAdmin.preferences
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Admin registration error:', error);
     return res.status(500).json({ 
       success: false, 
       message: 'Internal server error' 
